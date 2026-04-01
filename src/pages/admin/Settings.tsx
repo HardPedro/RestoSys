@@ -24,11 +24,26 @@ export default function Settings() {
     bar: { printer: '', tipo: 'termica', largura: 58 },
     caixa: { printer: '', tipo: 'normal', largura: 80 }
   });
+  const [enableAutoPrint, setEnableAutoPrint] = useState(false);
 
   useEffect(() => {
     const savedPrinter = localStorage.getItem('printerType');
     if (savedPrinter) {
       setPrinterType(savedPrinter);
+    }
+
+    const savedAutoPrint = localStorage.getItem('enableAutoPrint');
+    if (savedAutoPrint === 'true') {
+      setEnableAutoPrint(true);
+    }
+
+    const savedLocalConfig = localStorage.getItem('localAgentConfig');
+    if (savedLocalConfig) {
+      try {
+        setLocalConfig(JSON.parse(savedLocalConfig));
+      } catch (e) {
+        console.error('Failed to parse saved local config', e);
+      }
     }
     
     checkAgentStatus();
@@ -94,6 +109,9 @@ export default function Settings() {
 
   const saveLocalConfig = async () => {
     try {
+      // Save to localStorage first for UI persistence
+      localStorage.setItem('localAgentConfig', JSON.stringify(localConfig));
+
       const res = await fetch(`${agentUrl}/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -102,10 +120,10 @@ export default function Settings() {
       if (res.ok) {
         toast.success('Configuração do agente salva com sucesso!');
       } else {
-        toast.error('Erro ao salvar configuração no agente.');
+        toast.error('Erro ao salvar configuração no agente. Mas as configurações foram salvas localmente no navegador.');
       }
     } catch (e) {
-      toast.error('Erro de conexão com o agente local.');
+      toast.error('Erro de conexão com o agente local. As configurações foram salvas no navegador e serão enviadas quando o agente conectar.');
     }
   };
 
@@ -114,6 +132,14 @@ export default function Settings() {
     setPrinterType(val);
     localStorage.setItem('printerType', val);
     toast.success('Configuração de impressora salva neste dispositivo!');
+  };
+
+  const handleAutoPrintToggle = (enabled: boolean) => {
+    setEnableAutoPrint(enabled);
+    localStorage.setItem('enableAutoPrint', enabled.toString());
+    toast.success(enabled ? 'Impressão automática ativada neste dispositivo!' : 'Impressão automática desativada.');
+    // Force reload to restart PrintJobListener with new setting
+    setTimeout(() => window.location.reload(), 1000);
   };
 
   const generateTestData = async () => {
@@ -332,10 +358,21 @@ export default function Settings() {
               <p className="text-sm text-stone-500">Impressão silenciosa para Cozinha, Bar e Caixa</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200">
-            {agentStatus === 'checking' && <span className="text-sm font-bold text-stone-500">Verificando...</span>}
-            {agentStatus === 'online' && <span className="flex items-center gap-1.5 text-sm font-bold text-green-600"><CheckCircle size={16} /> Online</span>}
-            {agentStatus === 'offline' && <span className="flex items-center gap-1.5 text-sm font-bold text-red-600"><XCircle size={16} /> Offline</span>}
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer bg-stone-100 px-4 py-2 rounded-xl border border-stone-200 hover:bg-stone-200 transition-colors">
+              <input 
+                type="checkbox" 
+                checked={enableAutoPrint}
+                onChange={(e) => handleAutoPrintToggle(e.target.checked)}
+                className="h-5 w-5 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-sm font-bold text-stone-700">Ativar Impressão Automática</span>
+            </label>
+            <div className="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200">
+              {agentStatus === 'checking' && <span className="text-sm font-bold text-stone-500">Verificando...</span>}
+              {agentStatus === 'online' && <span className="flex items-center gap-1.5 text-sm font-bold text-green-600"><CheckCircle size={16} /> Online</span>}
+              {agentStatus === 'offline' && <span className="flex items-center gap-1.5 text-sm font-bold text-red-600"><XCircle size={16} /> Offline</span>}
+            </div>
           </div>
         </div>
 

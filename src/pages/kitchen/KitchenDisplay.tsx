@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, where, updateDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, updateDoc, doc, orderBy, addDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { CheckCircle, Clock, Play, Printer } from 'lucide-react';
 import { toast } from 'sonner';
@@ -66,6 +66,13 @@ export default function KitchenDisplay() {
     };
 
     printOrderWithFallback(printReq, content);
+
+    // Also create a printJob so the PC can print it automatically
+    addDoc(collection(db, 'printJobs'), {
+      ...printReq,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    }).catch(err => console.error('Failed to create kitchen print job', err));
   };
 
   const pendingItems = items.filter(i => i.status === 'pending');

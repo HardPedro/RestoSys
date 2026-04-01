@@ -9,8 +9,9 @@ export default function PrintJobListener() {
   const [isAgentOnline, setIsAgentOnline] = useState(false);
 
   useEffect(() => {
-    // Only run this listener on the Cashier/Admin PC
-    if (!userData || (userData.role !== 'admin' && userData.role !== 'cashier')) return;
+    // Only run this listener on the Cashier/Admin PC and if auto-print is enabled
+    const isAutoPrintEnabled = localStorage.getItem('enableAutoPrint') === 'true';
+    if (!userData || (userData.role !== 'admin' && userData.role !== 'cashier' && userData.role !== 'manager') || !isAutoPrintEnabled) return;
 
     // Health check for the agent
     const checkAgent = async () => {
@@ -22,7 +23,8 @@ export default function PrintJobListener() {
         clearTimeout(timeoutId);
         if (res.ok && !isAgentOnline) {
           setIsAgentOnline(true);
-          // When agent comes online, try to process all pending jobs
+          // When agent comes online, sync config and try to process all pending jobs
+          syncConfig();
           processPendingJobs();
         } else if (!res.ok && isAgentOnline) {
           setIsAgentOnline(false);
@@ -30,6 +32,21 @@ export default function PrintJobListener() {
       } catch (e) {
         clearTimeout(timeoutId);
         if (isAgentOnline) setIsAgentOnline(false);
+      }
+    };
+
+    const syncConfig = async () => {
+      const savedLocalConfig = localStorage.getItem('localAgentConfig');
+      if (savedLocalConfig) {
+        try {
+          await fetch('http://localhost:17321/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: savedLocalConfig
+          });
+        } catch (e) {
+          console.error('Failed to sync config to agent', e);
+        }
       }
     };
 

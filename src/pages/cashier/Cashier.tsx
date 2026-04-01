@@ -114,6 +114,14 @@ export default function Cashier() {
     };
 
     printOrderWithFallback(printReq, content);
+    
+    // Also send to printJobs so the PC can print it automatically
+    addDoc(collection(db, 'printJobs'), {
+      ...printReq,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    }).catch(err => console.error('Failed to create print job', err));
+
     toast.success(isPreBill ? 'Imprimindo pré-conta...' : 'Imprimindo comprovante...');
   };
 
