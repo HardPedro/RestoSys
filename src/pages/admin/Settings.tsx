@@ -311,14 +311,14 @@ export default function Settings() {
         {agentStatus === 'offline' && (
           <div className="mb-6 rounded-lg bg-orange-50 p-4 border border-orange-200">
             <p className="text-sm text-orange-800 mb-3">
-              O agente local não está rodando. Para habilitar a impressão automática e silenciosa, baixe e execute o agente no computador do caixa.
+              O agente local não está rodando. Para habilitar a impressão automática e silenciosa, baixe o executável abaixo e deixe-o rodando no computador do caixa.
             </p>
             <a 
-              href="/PrintAgent.zip" 
+              href="/PrintAgent.exe" 
               download
               className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
             >
-              <Download size={16} /> Baixar Agente (.zip)
+              <Download size={16} /> Baixar Agente (.exe)
             </a>
           </div>
         )}
