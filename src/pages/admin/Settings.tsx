@@ -11,7 +11,7 @@ export default function Settings() {
   const appUrl = window.location.origin;
   const waiterLoginUrl = `${appUrl}/waiter/login`;
   const customerMenuUrl = `${appUrl}/menu`;
-  const [printerType, setPrinterType] = useState('80mm');
+  const [printerType, setPrinterType] = useState(() => localStorage.getItem('printerType') || '80mm');
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Local Print Agent State
@@ -19,33 +19,33 @@ export default function Settings() {
   const [printers, setPrinters] = useState<string[]>([]);
   const [pendingJobs, setPendingJobs] = useState<any[]>([]);
   const agentUrl = 'http://localhost:17321'; // Using localhost instead of 127.0.0.1 for better browser compatibility with Mixed Content
-  const [localConfig, setLocalConfig] = useState({
-    cozinha: { printer: '', tipo: 'termica', largura: 80 },
-    bar: { printer: '', tipo: 'termica', largura: 58 },
-    caixa: { printer: '', tipo: 'normal', largura: 80 }
+  const [localConfig, setLocalConfig] = useState(() => {
+    return {
+      cozinha: { printer: '', tipo: 'termica', largura: 80 },
+      bar: { printer: '', tipo: 'termica', largura: 58 },
+      caixa: { printer: '', tipo: 'normal', largura: 80 }
+    };
   });
-  const [enableAutoPrint, setEnableAutoPrint] = useState(false);
+  const [enableAutoPrint, setEnableAutoPrint] = useState(() => localStorage.getItem('enableAutoPrint') === 'true');
 
   useEffect(() => {
-    const savedPrinter = localStorage.getItem('printerType');
-    if (savedPrinter) {
-      setPrinterType(savedPrinter);
-    }
-
-    const savedAutoPrint = localStorage.getItem('enableAutoPrint');
-    if (savedAutoPrint === 'true') {
-      setEnableAutoPrint(true);
-    }
-
-    const savedLocalConfig = localStorage.getItem('localAgentConfig');
-    if (savedLocalConfig) {
+    // Load config from Firestore
+    const loadConfig = async () => {
       try {
-        setLocalConfig(JSON.parse(savedLocalConfig));
+        const docRef = doc(db, 'settings', 'printAgent');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.config) {
+            setLocalConfig(data.config);
+          }
+        }
       } catch (e) {
-        console.error('Failed to parse saved local config', e);
+        console.error('Failed to load config from Firestore', e);
       }
-    }
-    
+    };
+    loadConfig();
+
     checkAgentStatus();
     const interval = setInterval(checkAgentStatus, 5000);
 
@@ -60,6 +60,11 @@ export default function Settings() {
       unsubJobs();
     };
   }, []);
+
+  // Auto-save enableAutoPrint to localStorage (this remains local to the device)
+  useEffect(() => {
+    localStorage.setItem('enableAutoPrint', enableAutoPrint.toString());
+  }, [enableAutoPrint]);
 
   const testAgentConnection = async () => {
     setAgentStatus('checking');
@@ -109,21 +114,27 @@ export default function Settings() {
 
   const saveLocalConfig = async () => {
     try {
-      // Save to localStorage first for UI persistence
-      localStorage.setItem('localAgentConfig', JSON.stringify(localConfig));
+      // 1. Save to Firestore (Database)
+      await setDoc(doc(db, 'settings', 'printAgent'), {
+        config: localConfig,
+        updatedAt: new Date().toISOString()
+      });
 
+      // 2. Send to Agent
       const res = await fetch(`${agentUrl}/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(localConfig)
       });
+      
       if (res.ok) {
-        toast.success('Configuração do agente salva com sucesso!');
+        toast.success('Configuração salva no Banco de Dados e enviada para o agente!');
       } else {
-        toast.error('Erro ao salvar configuração no agente. Mas as configurações foram salvas localmente no navegador.');
+        toast.error('Salvo no Banco de Dados, mas o agente local retornou erro.');
       }
     } catch (e) {
-      toast.error('Erro de conexão com o agente local. As configurações foram salvas no navegador e serão enviadas quando o agente conectar.');
+      console.error('Save error:', e);
+      toast.error('Erro ao salvar. Verifique sua conexão.');
     }
   };
 
@@ -136,7 +147,6 @@ export default function Settings() {
 
   const handleAutoPrintToggle = (enabled: boolean) => {
     setEnableAutoPrint(enabled);
-    localStorage.setItem('enableAutoPrint', enabled.toString());
     toast.success(enabled ? 'Impressão automática ativada neste dispositivo!' : 'Impressão automática desativada.');
     // Force reload to restart PrintJobListener with new setting
     setTimeout(() => window.location.reload(), 1000);

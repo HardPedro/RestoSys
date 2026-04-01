@@ -127,6 +127,16 @@
         "orderId": { "type": "string" }
       },
       "required": ["productId", "type", "quantity", "reason", "date"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Global application settings.",
+      "type": "object",
+      "properties": {
+        "config": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["config", "updatedAt"]
     }
   },
   "firestore": {
@@ -161,6 +171,10 @@
     "stockMovements": {
       "schema": { "$ref": "#/entities/StockMovement" },
       "description": "Stock movements."
+    },
+    "settings": {
+      "schema": { "$ref": "#/entities/Settings" },
+      "description": "Global settings."
     }
   }
 }

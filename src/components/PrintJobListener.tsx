@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, query, where, onSnapshot, updateDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, updateDoc, doc, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -36,17 +36,21 @@ export default function PrintJobListener() {
     };
 
     const syncConfig = async () => {
-      const savedLocalConfig = localStorage.getItem('localAgentConfig');
-      if (savedLocalConfig) {
-        try {
-          await fetch('http://localhost:17321/config', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: savedLocalConfig
-          });
-        } catch (e) {
-          console.error('Failed to sync config to agent', e);
+      try {
+        const docRef = doc(db, 'settings', 'printAgent');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.config) {
+            await fetch('http://localhost:17321/config', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data.config)
+            });
+          }
         }
+      } catch (e) {
+        console.error('Failed to sync config to agent from Firestore', e);
       }
     };
 
