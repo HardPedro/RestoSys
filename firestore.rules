@@ -1,0 +1,100 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        hasRole('admin') || 
+        (request.auth.token.email == "hardsoldisk001@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+    
+    function isManager() {
+      return hasRole('manager') || isAdmin();
+    }
+    
+    function isWaiter() {
+      return hasRole('waiter') || isManager();
+    }
+    
+    function isKitchen() {
+      return hasRole('kitchen') || isManager();
+    }
+    
+    function isBar() {
+      return hasRole('bar') || isManager();
+    }
+    
+    function isCashier() {
+      return hasRole('cashier') || isManager();
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || (request.auth.uid == userId && request.resource.data.role == 'waiter');
+      allow update: if isAdmin() || (request.auth.uid == userId && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      // Anyone can read products (for the digital menu)
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    match /recipes/{recipeId} {
+      allow read: if isAuthenticated();
+      allow write: if isManager();
+    }
+
+    match /tables/{tableId} {
+      allow read: if isAuthenticated();
+      allow write: if isWaiter() || isCashier();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAuthenticated();
+      allow create: if isWaiter() || isCashier();
+      allow update: if isWaiter() || isCashier();
+      allow delete: if isManager();
+    }
+
+    match /orderItems/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if isWaiter() || isCashier();
+      allow update: if isAuthenticated(); // Kitchen/Bar need to update status
+      allow delete: if isManager() || isCashier();
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isCashier() || isManager();
+      allow write: if isCashier() || isManager();
+    }
+
+    match /stockMovements/{movementId} {
+      allow read: if isManager();
+      allow write: if isManager() || isCashier(); // Cashier/System might auto-deduct stock
+    }
+  }
+}
