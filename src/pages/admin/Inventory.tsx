@@ -168,36 +168,36 @@ export default function Inventory() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-zinc-900">Estoque</h1>
-        <div className="flex gap-4">
+    <div className="p-4 md:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Estoque</h1>
+        <div className="flex flex-wrap gap-2 md:gap-4">
           <div className="flex rounded-lg bg-zinc-100 p-1">
             <button
               onClick={() => setActiveTab('inventory')}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-all ${activeTab === 'inventory' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
+              className={`rounded-md px-3 md:px-4 py-1.5 text-xs md:text-sm font-medium transition-all ${activeTab === 'inventory' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
             >
               Inventário
             </button>
             <button
               onClick={() => setActiveTab('movements')}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-all ${activeTab === 'movements' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
+              className={`rounded-md px-3 md:px-4 py-1.5 text-xs md:text-sm font-medium transition-all ${activeTab === 'movements' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
             >
               Movimentação
             </button>
           </div>
           <button
             onClick={() => setIsAdjustmentModalOpen(true)}
-            className="flex items-center gap-2 rounded-lg border-2 border-orange-600 px-4 py-2 font-medium text-orange-600 hover:bg-orange-50"
+            className="flex items-center gap-2 rounded-lg border-2 border-orange-600 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-orange-600 hover:bg-orange-50"
           >
-            Ajustar Estoque
+            Ajustar
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-medium text-white hover:bg-orange-700"
+            className="flex items-center gap-2 rounded-lg bg-orange-600 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white hover:bg-orange-700"
           >
-            <Plus size={20} />
-            Novo Produto
+            <Plus size={18} className="md:w-5 md:h-5" />
+            Novo
           </button>
         </div>
       </div>
@@ -270,75 +270,133 @@ export default function Inventory() {
       )}
 
       {activeTab === 'inventory' ? (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm text-zinc-600">
-            <thead className="bg-zinc-50 text-xs uppercase text-zinc-700">
-              <tr>
-                <th className="px-6 py-4 font-semibold">Nome</th>
-                <th className="px-6 py-4 font-semibold">Categoria</th>
-                <th className="px-6 py-4 font-semibold">Preço</th>
-                <th className="px-6 py-4 font-semibold">Estoque</th>
-                <th className="px-6 py-4 font-semibold text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-zinc-50">
-                  <td className="px-6 py-4 font-medium text-zinc-900">{product.name}</td>
-                  <td className="px-6 py-4 capitalize">{product.category}</td>
-                  <td className="px-6 py-4">R$ {product.price.toFixed(2)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className={product.stock <= product.minStock ? 'text-red-600 font-bold' : ''}>
-                        {product.stock} {product.unit}
-                      </span>
-                      {product.stock <= product.minStock && (
-                        <AlertTriangle size={16} className="text-red-500" />
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button onClick={() => handleEdit(product)} className="mr-3 text-blue-600 hover:text-blue-800">
+        <>
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+            <table className="w-full text-left text-sm text-zinc-600">
+              <thead className="bg-zinc-50 text-xs uppercase text-zinc-700">
+                <tr>
+                  <th className="px-6 py-4 font-semibold">Nome</th>
+                  <th className="px-6 py-4 font-semibold">Categoria</th>
+                  <th className="px-6 py-4 font-semibold">Preço</th>
+                  <th className="px-6 py-4 font-semibold">Estoque</th>
+                  <th className="px-6 py-4 font-semibold text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200">
+                {products.map((product) => (
+                  <tr key={product.id} className="hover:bg-zinc-50">
+                    <td className="px-6 py-4 font-medium text-zinc-900">{product.name}</td>
+                    <td className="px-6 py-4 capitalize">{product.category}</td>
+                    <td className="px-6 py-4">R$ {product.price.toFixed(2)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className={product.stock <= product.minStock ? 'text-red-600 font-bold' : ''}>
+                          {product.stock} {product.unit}
+                        </span>
+                        {product.stock <= product.minStock && (
+                          <AlertTriangle size={16} className="text-red-500" />
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button onClick={() => handleEdit(product)} className="mr-3 text-blue-600 hover:text-blue-800">
+                        <Edit size={18} />
+                      </button>
+                      <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-800">
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="grid gap-4 md:hidden">
+            {products.map((product) => (
+              <div key={product.id} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+                <div className="mb-2 flex items-start justify-between">
+                  <div>
+                    <h3 className="font-bold text-zinc-900">{product.name}</h3>
+                    <p className="text-xs capitalize text-zinc-500">{product.category}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleEdit(product)} className="rounded-lg p-2 text-blue-600 hover:bg-blue-50">
                       <Edit size={18} />
                     </button>
-                    <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-800">
+                    <button onClick={() => handleDelete(product.id)} className="rounded-lg p-2 text-red-600 hover:bg-red-50">
                       <Trash2 size={18} />
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm text-zinc-600">
-            <thead className="bg-zinc-50 text-xs uppercase text-zinc-700">
-              <tr>
-                <th className="px-6 py-4 font-semibold">Data</th>
-                <th className="px-6 py-4 font-semibold">Produto</th>
-                <th className="px-6 py-4 font-semibold">Tipo</th>
-                <th className="px-6 py-4 font-semibold">Qtd</th>
-                <th className="px-6 py-4 font-semibold">Motivo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200">
-              {movements.map((m) => (
-                <tr key={m.id} className="hover:bg-zinc-50">
-                  <td className="px-6 py-4">{new Date(m.date).toLocaleString('pt-BR')}</td>
-                  <td className="px-6 py-4 font-medium text-zinc-900">{m.productName}</td>
-                  <td className="px-6 py-4">
-                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${m.type === 'in' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {m.type === 'in' ? 'Entrada' : 'Saída'}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-zinc-600">R$ {product.price.toFixed(2)}</span>
+                  <div className="flex items-center gap-1">
+                    <span className={`font-bold ${product.stock <= product.minStock ? 'text-red-600' : 'text-zinc-900'}`}>
+                      {product.stock} {product.unit}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 font-bold">{m.quantity}</td>
-                  <td className="px-6 py-4 capitalize">{m.reason === 'sale' ? 'Venda' : m.reason}</td>
+                    {product.stock <= product.minStock && (
+                      <AlertTriangle size={14} className="text-red-500" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Desktop Table Movements */}
+          <div className="hidden md:block overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+            <table className="w-full text-left text-sm text-zinc-600">
+              <thead className="bg-zinc-50 text-xs uppercase text-zinc-700">
+                <tr>
+                  <th className="px-6 py-4 font-semibold">Data</th>
+                  <th className="px-6 py-4 font-semibold">Produto</th>
+                  <th className="px-6 py-4 font-semibold">Tipo</th>
+                  <th className="px-6 py-4 font-semibold">Qtd</th>
+                  <th className="px-6 py-4 font-semibold">Motivo</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-zinc-200">
+                {movements.map((m) => (
+                  <tr key={m.id} className="hover:bg-zinc-50">
+                    <td className="px-6 py-4">{new Date(m.date).toLocaleString('pt-BR')}</td>
+                    <td className="px-6 py-4 font-medium text-zinc-900">{m.productName}</td>
+                    <td className="px-6 py-4">
+                      <span className={`rounded-full px-2 py-1 text-xs font-medium ${m.type === 'in' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {m.type === 'in' ? 'Entrada' : 'Saída'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 font-bold">{m.quantity}</td>
+                    <td className="px-6 py-4 capitalize">{m.reason === 'sale' ? 'Venda' : m.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards Movements */}
+          <div className="grid gap-4 md:hidden">
+            {movements.map((m) => (
+              <div key={m.id} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs text-zinc-500">{new Date(m.date).toLocaleString('pt-BR')}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${m.type === 'in' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {m.type === 'in' ? 'Entrada' : 'Saída'}
+                  </span>
+                </div>
+                <h3 className="font-bold text-zinc-900">{m.productName}</h3>
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className="capitalize text-zinc-500">{m.reason === 'sale' ? 'Venda' : m.reason}</span>
+                  <span className="font-bold text-zinc-900">{m.quantity}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {isModalOpen && (

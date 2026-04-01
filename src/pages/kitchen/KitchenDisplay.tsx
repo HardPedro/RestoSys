@@ -56,10 +56,10 @@ export default function KitchenDisplay() {
   const preparingItems = items.filter(i => i.status === 'preparing');
 
   return (
-    <div className="flex h-screen flex-col bg-zinc-100 p-4 md:p-8">
-      <h1 className="mb-6 text-3xl font-bold text-zinc-900">Cozinha - Pedidos</h1>
+    <div className="flex min-h-screen flex-col bg-zinc-100 p-4 md:p-8">
+      <h1 className="mb-6 text-2xl md:text-3xl font-bold text-zinc-900">Cozinha - Pedidos</h1>
       
-      <div className="grid flex-1 gap-6 md:grid-cols-2">
+      <div className="grid flex-1 gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Pendentes */}
         <div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between border-b pb-4">

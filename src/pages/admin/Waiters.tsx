@@ -62,36 +62,36 @@ export default function Waiters() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-zinc-900">Garçons</h1>
+    <div className="p-4 md:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Garçons</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-medium text-white hover:bg-orange-700"
+          className="flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-medium text-white hover:bg-orange-700"
         >
           <Plus size={20} />
           Novo Garçom
         </button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {waiters.map((waiter) => (
-          <div key={waiter.id} className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div key={waiter.id} className="rounded-2xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-                <UserCheck size={24} />
+              <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+                <UserCheck size={20} className="md:w-6 md:h-6" />
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleEdit(waiter)} className="text-blue-600 hover:text-blue-800">
+                <button onClick={() => handleEdit(waiter)} className="rounded-lg p-2 text-blue-600 hover:bg-blue-50">
                   <Edit size={18} />
                 </button>
-                <button onClick={() => handleDelete(waiter.id)} className="text-red-600 hover:text-red-800">
+                <button onClick={() => handleDelete(waiter.id)} className="rounded-lg p-2 text-red-600 hover:bg-red-50">
                   <Trash2 size={18} />
                 </button>
               </div>
             </div>
             <h3 className="text-lg font-bold text-zinc-900">{waiter.name}</h3>
-            <p className="text-sm text-zinc-500">{waiter.email}</p>
+            <p className="text-sm text-zinc-500 truncate">{waiter.email}</p>
             <div className="mt-4 flex items-center gap-2 rounded-lg bg-zinc-50 p-2 text-sm font-medium text-zinc-700">
               <Key size={16} className="text-zinc-400" />
               PIN: {waiter.pin}

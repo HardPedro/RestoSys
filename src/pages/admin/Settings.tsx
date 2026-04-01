@@ -166,33 +166,35 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-8">
-      <h1 className="mb-8 text-3xl font-bold text-zinc-900">Configurações</h1>
+    <div className="p-4 md:p-8">
+      <h1 className="mb-8 text-2xl md:text-3xl font-bold text-zinc-900">Configurações</h1>
 
-      <div className="grid gap-8 md:grid-cols-2">
+      <div className="grid gap-6 md:gap-8 grid-cols-1 lg:grid-cols-2">
         {/* Waiter QR Code */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
-              <Smartphone size={24} />
+            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+              <Smartphone size={20} className="md:w-6 md:h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-zinc-900">Acesso Garçom</h2>
-              <p className="text-sm text-zinc-500">QR Code para os garçons conectarem seus celulares</p>
+              <h2 className="text-lg md:text-xl font-bold text-zinc-900">Acesso Garçom</h2>
+              <p className="text-xs md:text-sm text-zinc-500">QR Code para os garçons conectarem seus celulares</p>
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center rounded-xl bg-zinc-50 p-8">
-            <QRCodeSVG id="waiter-qr" value={waiterLoginUrl} size={200} level="H" includeMargin />
+          <div className="flex flex-col items-center justify-center rounded-xl bg-zinc-50 p-6 md:p-8">
+            <div className="bg-white p-2 rounded-lg shadow-sm">
+              <QRCodeSVG id="waiter-qr" value={waiterLoginUrl} size={180} level="H" includeMargin />
+            </div>
             <p className="mt-4 text-center text-sm font-medium text-zinc-600">
               Aponte a câmera para conectar
             </p>
-            <code className="mt-2 rounded bg-zinc-200 px-2 py-1 text-xs text-zinc-700">
+            <code className="mt-2 w-full break-all rounded bg-zinc-200 px-2 py-1 text-center text-[10px] md:text-xs text-zinc-700">
               {waiterLoginUrl}
             </code>
             <button
               onClick={() => downloadQR('waiter-qr', 'qr-acesso-garcom')}
-              className="mt-4 flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+              className="mt-4 flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
             >
               <Download size={16} /> Baixar QR Code
             </button>
@@ -200,28 +202,30 @@ export default function Settings() {
         </div>
 
         {/* Customer Menu QR Code */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-              <Globe size={24} />
+            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+              <Globe size={20} className="md:w-6 md:h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-zinc-900">Cardápio Digital</h2>
-              <p className="text-sm text-zinc-500">QR Code único para visualização dos clientes</p>
+              <h2 className="text-lg md:text-xl font-bold text-zinc-900">Cardápio Digital</h2>
+              <p className="text-xs md:text-sm text-zinc-500">QR Code único para visualização dos clientes</p>
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center rounded-xl bg-zinc-50 p-8">
-            <QRCodeSVG id="menu-qr" value={customerMenuUrl} size={200} level="H" includeMargin />
+          <div className="flex flex-col items-center justify-center rounded-xl bg-zinc-50 p-6 md:p-8">
+            <div className="bg-white p-2 rounded-lg shadow-sm">
+              <QRCodeSVG id="menu-qr" value={customerMenuUrl} size={180} level="H" includeMargin />
+            </div>
             <p className="mt-4 text-center text-sm font-medium text-zinc-600">
               Disponibilize nas mesas
             </p>
-            <code className="mt-2 rounded bg-zinc-200 px-2 py-1 text-xs text-zinc-700">
+            <code className="mt-2 w-full break-all rounded bg-zinc-200 px-2 py-1 text-center text-[10px] md:text-xs text-zinc-700">
               {customerMenuUrl}
             </code>
             <button
               onClick={() => downloadQR('menu-qr', 'qr-cardapio-geral')}
-              className="mt-4 flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="mt-4 flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               <Download size={16} /> Baixar QR Code
             </button>
@@ -229,14 +233,14 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">
-            <Printer size={24} />
+          <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">
+            <Printer size={20} className="md:w-6 md:h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-zinc-900">Configurações Locais (Este Dispositivo)</h2>
-            <p className="text-sm text-zinc-500">Ajustes específicos para o aparelho que você está usando agora</p>
+            <h2 className="text-lg md:text-xl font-bold text-zinc-900">Configurações Locais (Este Dispositivo)</h2>
+            <p className="text-xs md:text-sm text-zinc-500">Ajustes específicos para o aparelho que você está usando agora</p>
           </div>
         </div>
         
@@ -257,8 +261,8 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <h2 className="mb-4 text-xl font-bold text-zinc-900">Segurança e Regras</h2>
+      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
+        <h2 className="mb-4 text-lg md:text-xl font-bold text-zinc-900">Segurança e Regras</h2>
         <div className="space-y-4 text-sm text-zinc-600">
           <p>• Cada garçom deve utilizar seu próprio PIN de acesso.</p>
           <p>• O sistema previne que duas ordens sejam abertas para a mesma mesa simultaneamente.</p>

@@ -127,9 +127,9 @@ export default function Cashier() {
   };
 
   return (
-    <div className="flex h-screen bg-zinc-50">
+    <div className="flex h-screen flex-col md:flex-row bg-zinc-50">
       {/* Tables List */}
-      <div className="w-1/3 border-r bg-white p-6 overflow-y-auto">
+      <div className={`${selectedTable ? 'hidden md:block' : 'block'} w-full md:w-1/3 border-r bg-white p-4 md:p-6 overflow-y-auto`}>
         <h2 className="mb-6 text-2xl font-bold text-zinc-900">Caixa</h2>
         <div className="space-y-3">
           {tables.filter(t => t.status !== 'free').map(table => (
@@ -154,23 +154,31 @@ export default function Cashier() {
             </button>
           ))}
           {tables.filter(t => t.status !== 'free').length === 0 && (
-            <p className="text-center text-zinc-500 mt-10">Nenhuma mesa ocupada no momento.</p>
+            <div className="flex flex-col items-center justify-center py-12 text-zinc-400">
+              <Calculator size={48} className="mb-4 opacity-20" />
+              <p className="text-center font-medium">Nenhuma mesa ocupada no momento.</p>
+            </div>
           )}
         </div>
       </div>
 
       {/* Order Details */}
-      <div className="flex-1 p-8">
+      <div className={`${!selectedTable ? 'hidden md:flex' : 'flex'} flex-1 flex-col p-4 md:p-8 overflow-y-auto`}>
         {currentTable && currentOrder ? (
-          <div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 shadow-sm">
-            <div className="mb-8 flex items-center justify-between border-b pb-6">
+          <div className="mx-auto w-full max-w-2xl rounded-2xl bg-white p-4 md:p-8 shadow-sm">
+            <div className="mb-6 md:hidden">
+              <button onClick={() => setSelectedTable(null)} className="text-zinc-600 font-medium">
+                ← Voltar para mesas
+              </button>
+            </div>
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6">
               <div>
-                <h2 className="text-3xl font-bold text-zinc-900">Mesa {currentTable.number}</h2>
-                <p className="text-zinc-500">Pedido #{currentOrder.id.slice(0, 8)}</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-zinc-900">Mesa {currentTable.number}</h2>
+                <p className="text-sm text-zinc-500">Pedido #{currentOrder.id.slice(0, 8)}</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-zinc-500">Total a Pagar</p>
-                <p className="text-4xl font-bold text-orange-600">R$ {currentOrder.total.toFixed(2)}</p>
+              <div className="sm:text-right">
+                <p className="text-xs md:text-sm font-medium text-zinc-500">Total a Pagar</p>
+                <p className="text-3xl md:text-4xl font-bold text-orange-600">R$ {currentOrder.total.toFixed(2)}</p>
               </div>
             </div>
 
@@ -187,7 +195,7 @@ export default function Cashier() {
             </div>
 
             <div className="mb-8">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-bold text-zinc-900">Forma de Pagamento</h3>
                 <label className="flex items-center gap-2 text-sm font-medium text-zinc-600 cursor-pointer">
                   <input 
@@ -199,12 +207,12 @@ export default function Cashier() {
                   Imprimir recibo ao fechar
                 </label>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {['credit', 'debit', 'pix', 'cash'].map(method => (
                   <button
                     key={method}
                     onClick={() => setPaymentMethod(method)}
-                    className={`rounded-xl border p-3 font-medium capitalize transition-colors ${
+                    className={`rounded-xl border p-3 text-sm font-medium capitalize transition-colors ${
                       paymentMethod === method ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
                     }`}
                   >
@@ -214,16 +222,16 @@ export default function Cashier() {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => handlePrint(true)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 py-4 font-bold text-zinc-600 hover:bg-zinc-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 py-3 md:py-4 font-bold text-zinc-600 hover:bg-zinc-50"
               >
-                <Printer size={20} /> Imprimir Pré-conta
+                <Printer size={20} /> Pré-conta
               </button>
               <button
                 onClick={handleCloseOrder}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-600 py-4 font-bold text-white hover:bg-orange-700"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-600 py-3 md:py-4 font-bold text-white hover:bg-orange-700"
               >
                 <CheckCircle size={20} /> Confirmar Pagamento
               </button>
@@ -232,7 +240,7 @@ export default function Cashier() {
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-zinc-400">
             <Calculator size={64} className="mb-4 opacity-20" />
-            <p className="text-xl font-medium">Selecione uma mesa para fechar a conta</p>
+            <p className="text-xl font-medium text-center">Selecione uma mesa para fechar a conta</p>
           </div>
         )}
       </div>

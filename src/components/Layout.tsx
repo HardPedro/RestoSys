@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ChefHat, LayoutDashboard, Package, DollarSign, UtensilsCrossed, Wine, Calculator, LogOut, Menu, Users, Settings as SettingsIcon } from 'lucide-react';
+import { ChefHat, LayoutDashboard, Package, DollarSign, UtensilsCrossed, Wine, Calculator, LogOut, Menu, Users, Settings as SettingsIcon, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Layout() {
   const { userData, logout } = useAuth();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manager'] },
@@ -22,7 +24,70 @@ export default function Layout() {
   const filteredNav = navItems.filter(item => item.roles.includes(userData?.role || ''));
 
   return (
-    <div className="flex h-screen bg-zinc-50">
+    <div className="flex h-screen bg-zinc-50 flex-col md:flex-row">
+      {/* Mobile Header */}
+      <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:hidden">
+        <div className="flex items-center gap-2">
+          <ChefHat className="text-orange-600" />
+          <span className="text-lg font-bold">RestoSys</span>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="p-2 text-zinc-600 hover:bg-zinc-100 rounded-lg"
+        >
+          <Menu size={24} />
+        </button>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+          <aside 
+            className="absolute left-0 top-0 h-full w-64 bg-white shadow-xl flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex h-16 items-center justify-between border-b px-6">
+              <div className="flex items-center gap-2">
+                <ChefHat className="text-orange-600" />
+                <span className="text-lg font-bold">RestoSys</span>
+              </div>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="text-zinc-400">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <nav className="flex-1 space-y-1 p-4">
+              {filteredNav.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    location.pathname.startsWith(item.path) 
+                      ? "bg-orange-50 text-orange-600" 
+                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                  )}
+                >
+                  <item.icon size={20} />
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="border-t p-4">
+              <button
+                onClick={logout}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+              >
+                <LogOut size={20} />
+                Sair
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* Sidebar for Desktop */}
       <aside className="hidden w-64 flex-col border-r bg-white md:flex">
         <div className="flex h-16 items-center gap-2 border-b px-6">

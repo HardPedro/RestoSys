@@ -131,26 +131,26 @@ export default function Dashboard() {
   const totalPayments = Object.values(paymentMethods).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="p-8">
-      <h1 className="mb-8 text-3xl font-bold text-zinc-900">Dashboard</h1>
+    <div className="p-4 md:p-8">
+      <h1 className="mb-6 md:mb-8 text-2xl md:text-3xl font-bold text-zinc-900">Dashboard</h1>
       
-      <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card, i) => (
-          <div key={i} className="flex items-center gap-4 rounded-xl bg-white p-6 shadow-sm border border-zinc-100">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-full ${card.bg} ${card.color}`}>
-              <card.icon size={24} />
+          <div key={i} className="flex items-center gap-4 rounded-xl bg-white p-4 md:p-6 shadow-sm border border-zinc-100">
+            <div className={`flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full ${card.bg} ${card.color}`}>
+              <card.icon size={20} className="md:w-6 md:h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-zinc-500">{card.title}</p>
-              <p className="text-2xl font-bold text-zinc-900">{card.value}</p>
+              <p className="text-xs md:text-sm font-medium text-zinc-500">{card.title}</p>
+              <p className="text-xl md:text-2xl font-bold text-zinc-900">{card.value}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Top Products */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
               <Activity size={20} />
@@ -167,7 +167,7 @@ export default function Dashboard() {
                     <p className="text-xs text-zinc-500">{product.quantity} unidades vendidas</p>
                   </div>
                 </div>
-                <span className="font-bold text-zinc-900">R$ {product.revenue.toFixed(2)}</span>
+                <span className="font-bold text-zinc-900 text-sm md:text-base">R$ {product.revenue.toFixed(2)}</span>
               </div>
             )) : (
               <p className="text-center text-sm text-zinc-500 py-4">Nenhuma venda registrada hoje.</p>
@@ -176,7 +176,7 @@ export default function Dashboard() {
         </div>
 
         {/* Payment Methods */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600">
               <CreditCard size={20} />
@@ -208,29 +208,29 @@ export default function Dashboard() {
         </div>
 
         {/* Table Status */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
               <PieChart size={20} />
             </div>
             <h2 className="text-lg font-bold text-zinc-900">Status das Mesas</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-xl bg-zinc-50 p-4 text-center">
-              <p className="text-sm font-medium text-zinc-500">Total de Mesas</p>
-              <p className="text-3xl font-bold text-zinc-900">{tables.length}</p>
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <div className="rounded-xl bg-zinc-50 p-3 md:p-4 text-center">
+              <p className="text-xs md:text-sm font-medium text-zinc-500">Total de Mesas</p>
+              <p className="text-2xl md:text-3xl font-bold text-zinc-900">{tables.length}</p>
             </div>
-            <div className="rounded-xl bg-green-50 p-4 text-center">
-              <p className="text-sm font-medium text-green-600">Livres</p>
-              <p className="text-3xl font-bold text-green-700">{tableStatusCount.free}</p>
+            <div className="rounded-xl bg-green-50 p-3 md:p-4 text-center">
+              <p className="text-xs md:text-sm font-medium text-green-600">Livres</p>
+              <p className="text-2xl md:text-3xl font-bold text-green-700">{tableStatusCount.free}</p>
             </div>
-            <div className="rounded-xl bg-orange-50 p-4 text-center">
-              <p className="text-sm font-medium text-orange-600">Ocupadas</p>
-              <p className="text-3xl font-bold text-orange-700">{tableStatusCount.occupied}</p>
+            <div className="rounded-xl bg-orange-50 p-3 md:p-4 text-center">
+              <p className="text-xs md:text-sm font-medium text-orange-600">Ocupadas</p>
+              <p className="text-2xl md:text-3xl font-bold text-orange-700">{tableStatusCount.occupied}</p>
             </div>
-            <div className="rounded-xl bg-red-50 p-4 text-center">
-              <p className="text-sm font-medium text-red-600">Fechando</p>
-              <p className="text-3xl font-bold text-red-700">{tableStatusCount.billing}</p>
+            <div className="rounded-xl bg-red-50 p-3 md:p-4 text-center">
+              <p className="text-xs md:text-sm font-medium text-red-600">Fechando</p>
+              <p className="text-2xl md:text-3xl font-bold text-red-700">{tableStatusCount.billing}</p>
             </div>
           </div>
         </div>

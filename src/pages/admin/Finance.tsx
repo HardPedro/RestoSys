@@ -60,26 +60,28 @@ export default function Finance() {
   }, 0);
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-zinc-900">Financeiro</h1>
+  return (
+    <div className="p-4 md:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Financeiro</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-medium text-white hover:bg-orange-700"
+          className="flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-medium text-white hover:bg-orange-700"
         >
           <Plus size={20} />
           Nova Transação
         </button>
       </div>
 
-      <div className="mb-8 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-medium text-zinc-500">Saldo Atual (Pago)</h2>
-        <p className={`text-3xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+      <div className="mb-8 rounded-xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
+        <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Saldo Atual (Pago)</h2>
+        <p className={`text-2xl md:text-3xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
           R$ {balance.toFixed(2)}
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
         <table className="w-full text-left text-sm text-zinc-600">
           <thead className="bg-zinc-50 text-xs uppercase text-zinc-700">
             <tr>
@@ -120,6 +122,38 @@ export default function Finance() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="grid gap-4 md:hidden">
+        {transactions.map((t) => (
+          <div key={t.id} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div className="mb-2 flex items-start justify-between">
+              <div>
+                <h3 className="font-bold text-zinc-900">{t.description}</h3>
+                <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${t.type === 'receivable' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {t.type === 'receivable' ? 'Receita' : 'Despesa'}
+                </span>
+              </div>
+              <p className="font-bold text-zinc-900">R$ {t.amount.toFixed(2)}</p>
+            </div>
+            <div className="flex items-center justify-between text-xs text-zinc-500">
+              <span>Venc: {new Date(t.dueDate).toLocaleDateString('pt-BR')}</span>
+              <div className="flex items-center gap-2">
+                {t.status === 'paid' ? (
+                  <span className="flex items-center gap-1 text-green-600 font-medium"><CheckCircle size={14} /> Pago</span>
+                ) : (
+                  <span className="flex items-center gap-1 text-orange-600 font-medium"><Clock size={14} /> Pendente</span>
+                )}
+                {t.status === 'pending' && (
+                  <button onClick={() => handlePay(t.id)} className="rounded-lg bg-blue-50 px-2 py-1 text-blue-600 font-bold">
+                    Pagar
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {isModalOpen && (
