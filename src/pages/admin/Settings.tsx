@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { QrCode, Smartphone, Globe, Download, Printer, Database } from 'lucide-react';
+import { QrCode, Smartphone, Globe, Download, Printer, Database, Settings as SettingsIcon, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { collection, addDoc, getDocs, updateDoc, doc } from 'firebase/firestore';
@@ -14,12 +14,69 @@ export default function Settings() {
   const [printerType, setPrinterType] = useState('80mm');
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Local Print Agent State
+  const [agentStatus, setAgentStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [printers, setPrinters] = useState<string[]>([]);
+  const [localConfig, setLocalConfig] = useState({
+    cozinha: { printer: '', tipo: 'termica', largura: 80 },
+    bar: { printer: '', tipo: 'termica', largura: 58 },
+    caixa: { printer: '', tipo: 'normal', largura: 80 }
+  });
+
   useEffect(() => {
     const savedPrinter = localStorage.getItem('printerType');
     if (savedPrinter) {
       setPrinterType(savedPrinter);
     }
+    checkAgentStatus();
+    const interval = setInterval(checkAgentStatus, 5000);
+    return () => clearInterval(interval);
   }, []);
+
+  const checkAgentStatus = async () => {
+    try {
+      const res = await fetch('http://localhost:17321/health');
+      if (res.ok) {
+        if (agentStatus !== 'online') {
+          setAgentStatus('online');
+          fetchPrinters();
+        }
+      } else {
+        setAgentStatus('offline');
+      }
+    } catch {
+      setAgentStatus('offline');
+    }
+  };
+
+  const fetchPrinters = async () => {
+    try {
+      const res = await fetch('http://localhost:17321/printers');
+      if (res.ok) {
+        const data = await res.json();
+        setPrinters(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch printers', e);
+    }
+  };
+
+  const saveLocalConfig = async () => {
+    try {
+      const res = await fetch('http://localhost:17321/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(localConfig)
+      });
+      if (res.ok) {
+        toast.success('Configuração do agente salva com sucesso!');
+      } else {
+        toast.error('Erro ao salvar configuração no agente.');
+      }
+    } catch (e) {
+      toast.error('Erro de conexão com o agente local.');
+    }
+  };
 
   const handlePrinterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
@@ -234,15 +291,111 @@ export default function Settings() {
       </div>
 
       <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+              <SettingsIcon size={20} className="md:w-6 md:h-6" />
+            </div>
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-zinc-900">Agente de Impressão Local</h2>
+              <p className="text-xs md:text-sm text-zinc-500">Impressão silenciosa para Cozinha, Bar e Caixa</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {agentStatus === 'checking' && <span className="text-sm text-zinc-500">Verificando...</span>}
+            {agentStatus === 'online' && <span className="flex items-center gap-1 text-sm font-bold text-green-600"><CheckCircle size={16} /> Online</span>}
+            {agentStatus === 'offline' && <span className="flex items-center gap-1 text-sm font-bold text-red-600"><XCircle size={16} /> Offline</span>}
+          </div>
+        </div>
+
+        {agentStatus === 'offline' && (
+          <div className="mb-6 rounded-lg bg-orange-50 p-4 border border-orange-200">
+            <p className="text-sm text-orange-800 mb-3">
+              O agente local não está rodando. Para habilitar a impressão automática e silenciosa, baixe e execute o agente no computador do caixa.
+            </p>
+            <a 
+              href="/PrintAgent.zip" 
+              download
+              className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+            >
+              <Download size={16} /> Baixar Agente (.zip)
+            </a>
+          </div>
+        )}
+
+        {agentStatus === 'online' && (
+          <div className="grid gap-6 md:grid-cols-3">
+            {['cozinha', 'bar', 'caixa'].map((setor) => (
+              <div key={setor} className="rounded-xl border border-zinc-200 p-4">
+                <h3 className="mb-3 font-bold capitalize text-zinc-900">{setor}</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-zinc-700">Impressora</label>
+                    <select
+                      value={localConfig[setor as keyof typeof localConfig].printer}
+                      onChange={(e) => setLocalConfig(prev => ({ ...prev, [setor]: { ...prev[setor as keyof typeof localConfig], printer: e.target.value } }))}
+                      className="w-full rounded-lg border border-zinc-300 p-2 text-sm outline-none focus:border-indigo-500"
+                    >
+                      <option value="">Selecione...</option>
+                      {printers.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-zinc-700">Tipo</label>
+                    <select
+                      value={localConfig[setor as keyof typeof localConfig].tipo}
+                      onChange={(e) => setLocalConfig(prev => ({ ...prev, [setor]: { ...prev[setor as keyof typeof localConfig], tipo: e.target.value } }))}
+                      className="w-full rounded-lg border border-zinc-300 p-2 text-sm outline-none focus:border-indigo-500"
+                    >
+                      <option value="termica">Térmica</option>
+                      <option value="normal">Normal (A4)</option>
+                    </select>
+                  </div>
+
+                  {localConfig[setor as keyof typeof localConfig].tipo === 'termica' && (
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-zinc-700">Largura (mm)</label>
+                      <select
+                        value={localConfig[setor as keyof typeof localConfig].largura}
+                        onChange={(e) => setLocalConfig(prev => ({ ...prev, [setor]: { ...prev[setor as keyof typeof localConfig], largura: Number(e.target.value) } }))}
+                        className="w-full rounded-lg border border-zinc-300 p-2 text-sm outline-none focus:border-indigo-500"
+                      >
+                        <option value={80}>80mm</option>
+                        <option value={58}>58mm</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {agentStatus === 'online' && (
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={saveLocalConfig}
+              className="rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white hover:bg-indigo-700"
+            >
+              Salvar Configurações do Agente
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">
             <Printer size={20} className="md:w-6 md:h-6" />
           </div>
           <div>
-            <h2 className="text-lg md:text-xl font-bold text-zinc-900">Configurações Locais (Este Dispositivo)</h2>
-            <p className="text-xs md:text-sm text-zinc-500">Ajustes específicos para o aparelho que você está usando agora</p>
+            <h2 className="text-lg md:text-xl font-bold text-zinc-900">Impressão do Navegador (Fallback)</h2>
+            <p className="text-xs md:text-sm text-zinc-500">Usado caso o Agente Local não esteja disponível</p>
           </div>
         </div>
+
         
         <div className="max-w-md">
           <label className="mb-2 block text-sm font-medium text-zinc-700">Tamanho da Impressora</label>

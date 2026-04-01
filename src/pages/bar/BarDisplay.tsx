@@ -3,7 +3,7 @@ import { collection, onSnapshot, query, where, updateDoc, doc, orderBy } from 'f
 import { db } from '../../lib/firebase';
 import { CheckCircle, Clock, Play, Wine, Printer } from 'lucide-react';
 import { toast } from 'sonner';
-import { printReceipt } from '../../lib/print';
+import { printReceipt, printOrderWithFallback } from '../../lib/print';
 
 export default function BarDisplay() {
   const [items, setItems] = useState<any[]>([]);
@@ -49,7 +49,23 @@ export default function BarDisplay() {
         <p>*** FIM ***</p>
       </div>
     `;
-    printReceipt(content);
+
+    const printReq = {
+      pedidoId: item.orderId?.slice(0, 8) || 'N/A',
+      itens: [{
+        nome: item.productName,
+        setor: 'bar',
+        quantidade: item.quantity,
+        preco: item.price || 0,
+        observacao: item.notes
+      }],
+      imprimirCaixa: false,
+      tipo: 'comanda',
+      total: 0,
+      mesa: item.tableNumber === 0 ? 'BAR' : (item.tableNumber?.toString() || '?')
+    };
+
+    printOrderWithFallback(printReq, content);
   };
 
   const pendingItems = items.filter(i => i.status === 'pending');

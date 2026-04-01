@@ -3,7 +3,7 @@ import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, getDocs, 
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Plus, Minus, ShoppingBag, ArrowLeft, CheckCircle, Clock, Utensils, Wine, LogOut, Printer } from 'lucide-react';
-import { printReceipt } from '../../lib/print';
+import { printReceipt, printOrderWithFallback } from '../../lib/print';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -270,6 +270,28 @@ export default function WaiterApp() {
         }
       });
 
+      const printReq = {
+        pedidoId: currentOrderId.slice(0, 8),
+        itens: cart.map(i => ({
+          nome: i.product.name,
+          setor: i.product.category,
+          quantidade: i.quantity,
+          preco: i.product.price,
+          observacao: i.notes
+        })),
+        imprimirCaixa: false,
+        tipo: 'comanda',
+        total: 0,
+        mesa: currentTable.number === 0 ? 'BAR' : currentTable.number.toString()
+      };
+      
+      // Send to local agent silently, no fallback needed for kitchen/bar if offline
+      fetch('http://localhost:17321/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(printReq)
+      }).catch(() => {});
+
       setCart([]);
       setView('order');
       toast.success('Pedido enviado para preparo!');
@@ -311,7 +333,23 @@ export default function WaiterApp() {
         <p>Obrigado pela preferência!</p>
       </div>
     `;
-    printReceipt(content);
+
+    const printReq = {
+      pedidoId: currentOrder.id.slice(0, 8),
+      itens: orderItems.map(i => ({
+        nome: i.productName,
+        setor: i.type,
+        quantidade: i.quantity,
+        preco: i.price,
+        observacao: i.notes
+      })),
+      imprimirCaixa: true,
+      tipo: 'preconta',
+      total: currentOrder.total,
+      mesa: currentTable.number === 0 ? 'BAR' : currentTable.number.toString()
+    };
+
+    printOrderWithFallback(printReq, content);
     toast.success('Imprimindo conferência...');
   };
 

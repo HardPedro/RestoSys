@@ -3,7 +3,7 @@ import { collection, onSnapshot, doc, updateDoc, addDoc, query, where } from 'fi
 import { db } from '../../lib/firebase';
 import { Calculator, CheckCircle, Printer } from 'lucide-react';
 import { toast } from 'sonner';
-import { printReceipt } from '../../lib/print';
+import { printReceipt, printOrderWithFallback } from '../../lib/print';
 
 export default function Cashier() {
   const [tables, setTables] = useState<any[]>([]);
@@ -96,7 +96,24 @@ export default function Cashier() {
         <p>Obrigado pela preferência!</p>
       </div>
     `;
-    printReceipt(content);
+
+    const printReq = {
+      pedidoId: currentOrder.id.slice(0, 8),
+      itens: itemsToPrint.map(i => ({
+        nome: i.productName,
+        setor: i.type,
+        quantidade: i.quantity,
+        preco: i.price,
+        observacao: i.notes
+      })),
+      imprimirCaixa: true,
+      tipo: isPreBill ? 'preconta' : 'cupom',
+      total: total,
+      pagamento: !isPreBill ? (paymentMethodNames[paymentMethod] || paymentMethod) : undefined,
+      mesa: currentTable.number === 0 ? 'BAR' : currentTable.number.toString()
+    };
+
+    printOrderWithFallback(printReq, content);
     toast.success(isPreBill ? 'Imprimindo pré-conta...' : 'Imprimindo comprovante...');
   };
 

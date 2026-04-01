@@ -1,3 +1,33 @@
+export interface PrintRequest {
+  pedidoId: string;
+  itens: {
+    nome: string;
+    setor: string;
+    quantidade: number;
+    observacao?: string;
+    preco: number;
+  }[];
+  imprimirCaixa: boolean;
+  tipo: string;
+  total: number;
+  pagamento?: string;
+  mesa: string;
+}
+
+export const printOrderWithFallback = async (request: PrintRequest, htmlContent: string) => {
+  try {
+    const res = await fetch('http://localhost:17321/print', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request)
+    });
+    if (res.ok) return;
+  } catch (e) {
+    // Agent offline or error, fallback to browser print
+  }
+  printReceipt(htmlContent);
+};
+
 export const printReceipt = (content: string) => {
   const printerType = localStorage.getItem('printerType') || '80mm';
   
