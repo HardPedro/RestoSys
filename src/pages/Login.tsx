@@ -9,21 +9,21 @@ export default function Login() {
   if (user) return <Navigate to="/" replace />;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-        <div className="mb-8 flex flex-col items-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-            <ChefHat size={32} />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-stone-100 p-4 font-sans">
+      <div className="w-full max-w-md rounded-3xl bg-white p-8 md:p-10 shadow-xl border border-stone-200">
+        <div className="mb-10 flex flex-col items-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-lg shadow-orange-600/20 mb-6">
+            <ChefHat size={40} />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-zinc-900">RestoSys</h1>
-          <p className="text-zinc-500">Gestão Inteligente para Restaurantes</p>
+          <h1 className="text-3xl font-bold font-heading tracking-tight text-stone-900">RestoSys</h1>
+          <p className="text-stone-500 font-medium mt-2">Gestão Inteligente para Restaurantes</p>
         </div>
 
         <button
           onClick={loginWithGoogle}
-          className="flex w-full items-center justify-center gap-3 rounded-lg bg-zinc-900 px-4 py-3 font-medium text-white transition-colors hover:bg-zinc-800"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-stone-900 px-4 py-4 font-bold text-white transition-all hover:bg-stone-800 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24">
+          <svg className="h-6 w-6" viewBox="0 0 24 24">
             <path
               fill="currentColor"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

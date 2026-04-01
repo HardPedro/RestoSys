@@ -72,79 +72,91 @@ export default function BarDisplay() {
   const preparingItems = items.filter(i => i.status === 'preparing');
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-100 p-4 md:p-8">
-      <h1 className="mb-6 flex items-center gap-3 text-2xl md:text-3xl font-bold text-zinc-900">
+    <div className="flex min-h-screen flex-col bg-stone-100 p-4 md:p-8 max-w-[1600px] mx-auto w-full">
+      <h1 className="mb-6 flex items-center gap-3 text-2xl md:text-3xl font-bold font-heading tracking-tight text-stone-900">
         <Wine size={32} className="text-purple-600" /> Bar - Pedidos
       </h1>
       
       <div className="grid flex-1 gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Pendentes */}
-        <div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between border-b pb-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-orange-600">
-              <Clock size={24} /> Pendentes
+        <div className="flex flex-col rounded-3xl bg-white p-6 md:p-8 shadow-sm border border-stone-200">
+          <div className="mb-6 flex items-center justify-between border-b border-stone-100 pb-4">
+            <h2 className="flex items-center gap-3 text-xl md:text-2xl font-bold font-heading text-orange-600">
+              <Clock size={28} /> Pendentes
             </h2>
-            <span className="rounded-full bg-orange-100 px-3 py-1 font-bold text-orange-600">{pendingItems.length}</span>
+            <span className="rounded-full bg-orange-100 px-4 py-1.5 font-bold text-orange-600 border border-orange-200">{pendingItems.length}</span>
           </div>
-          <div className="flex-1 space-y-4 overflow-y-auto">
+          <div className="flex-1 space-y-4 overflow-y-auto pr-2">
             {pendingItems.map(item => (
-              <div key={item.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                <div className="mb-2 flex items-start justify-between">
+              <div key={item.id} className="rounded-2xl border border-stone-200 bg-stone-50 p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div className="mb-3 flex items-start justify-between">
                   <div>
-                    <span className="text-sm font-bold text-zinc-500">{item.tableNumber === 0 ? 'BAR' : `Mesa ${item.tableNumber || '?'}`}</span>
-                    <p className="text-lg font-bold text-zinc-900">{item.quantity}x {item.productName}</p>
+                    <span className="inline-block rounded-lg bg-stone-200/50 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-stone-600 mb-2">{item.tableNumber === 0 ? 'BAR' : `Mesa ${item.tableNumber || '?'}`}</span>
+                    <p className="text-xl font-bold font-heading text-stone-900">{item.quantity}x {item.productName}</p>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="text-xs text-zinc-500">{new Date(item.createdAt).toLocaleTimeString()}</span>
-                    <button onClick={() => handlePrint(item)} className="text-zinc-400 hover:text-zinc-600" title="Imprimir Comanda">
-                      <Printer size={18} />
+                  <div className="flex flex-col items-end gap-3">
+                    <span className="text-xs font-medium text-stone-500 bg-white px-2 py-1 rounded-md border border-stone-200">{new Date(item.createdAt).toLocaleTimeString()}</span>
+                    <button onClick={() => handlePrint(item)} className="rounded-xl p-2 text-stone-400 hover:bg-stone-200 hover:text-stone-700 transition-colors" title="Imprimir Comanda">
+                      <Printer size={20} />
                     </button>
                   </div>
                 </div>
-                {item.notes && <p className="mb-4 text-sm font-medium text-red-600">Obs: {item.notes}</p>}
+                {item.notes && <p className="mb-4 text-sm font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">Obs: {item.notes}</p>}
                 <button
                   onClick={() => updateStatus(item.id, 'preparing')}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 font-medium text-white hover:bg-blue-700"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95"
                 >
-                  <Play size={18} /> Iniciar Preparo
+                  <Play size={20} /> Iniciar Preparo
                 </button>
               </div>
             ))}
+            {pendingItems.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-40 text-stone-400">
+                <CheckCircle size={48} className="mb-4 opacity-20" />
+                <p className="font-medium">Nenhum pedido pendente</p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Preparando */}
-        <div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between border-b pb-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-blue-600">
-              <Play size={24} /> Em Preparo
+        <div className="flex flex-col rounded-3xl bg-white p-6 md:p-8 shadow-sm border border-stone-200">
+          <div className="mb-6 flex items-center justify-between border-b border-stone-100 pb-4">
+            <h2 className="flex items-center gap-3 text-xl md:text-2xl font-bold font-heading text-blue-600">
+              <Play size={28} /> Em Preparo
             </h2>
-            <span className="rounded-full bg-blue-100 px-3 py-1 font-bold text-blue-600">{preparingItems.length}</span>
+            <span className="rounded-full bg-blue-100 px-4 py-1.5 font-bold text-blue-600 border border-blue-200">{preparingItems.length}</span>
           </div>
-          <div className="flex-1 space-y-4 overflow-y-auto">
+          <div className="flex-1 space-y-4 overflow-y-auto pr-2">
             {preparingItems.map(item => (
-              <div key={item.id} className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                <div className="mb-2 flex items-start justify-between">
+              <div key={item.id} className="rounded-2xl border border-blue-200 bg-blue-50/50 p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div className="mb-3 flex items-start justify-between">
                   <div>
-                    <span className="text-sm font-bold text-blue-500">{item.tableNumber === 0 ? 'BAR' : `Mesa ${item.tableNumber || '?'}`}</span>
-                    <p className="text-lg font-bold text-zinc-900">{item.quantity}x {item.productName}</p>
+                    <span className="inline-block rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 mb-2">{item.tableNumber === 0 ? 'BAR' : `Mesa ${item.tableNumber || '?'}`}</span>
+                    <p className="text-xl font-bold font-heading text-stone-900">{item.quantity}x {item.productName}</p>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="text-xs text-zinc-500">{new Date(item.createdAt).toLocaleTimeString()}</span>
-                    <button onClick={() => handlePrint(item)} className="text-blue-400 hover:text-blue-600" title="Imprimir Comanda">
-                      <Printer size={18} />
+                  <div className="flex flex-col items-end gap-3">
+                    <span className="text-xs font-medium text-stone-500 bg-white px-2 py-1 rounded-md border border-stone-200">{new Date(item.createdAt).toLocaleTimeString()}</span>
+                    <button onClick={() => handlePrint(item)} className="rounded-xl p-2 text-blue-400 hover:bg-blue-100 hover:text-blue-700 transition-colors" title="Imprimir Comanda">
+                      <Printer size={20} />
                     </button>
                   </div>
                 </div>
-                {item.notes && <p className="mb-4 text-sm font-medium text-red-600">Obs: {item.notes}</p>}
+                {item.notes && <p className="mb-4 text-sm font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">Obs: {item.notes}</p>}
                 <button
                   onClick={() => updateStatus(item.id, 'ready')}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-2 font-medium text-white hover:bg-green-700"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-3 font-bold text-white hover:bg-green-700 shadow-md shadow-green-600/20 transition-all active:scale-95"
                 >
-                  <CheckCircle size={18} /> Marcar como Pronto
+                  <CheckCircle size={20} /> Marcar como Pronto
                 </button>
               </div>
             ))}
+            {preparingItems.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-40 text-stone-400">
+                <Clock size={48} className="mb-4 opacity-20" />
+                <p className="font-medium">Nenhum pedido em preparo</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

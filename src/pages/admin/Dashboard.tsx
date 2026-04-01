@@ -131,18 +131,18 @@ export default function Dashboard() {
   const totalPayments = (Object.values(paymentMethods) as number[]).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="p-4 md:p-8">
-      <h1 className="mb-6 md:mb-8 text-2xl md:text-3xl font-bold text-zinc-900">Dashboard</h1>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <h1 className="mb-6 md:mb-8 text-3xl md:text-4xl font-bold font-heading tracking-tight text-stone-900">Dashboard</h1>
       
       <div className="mb-8 grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card, i) => (
-          <div key={i} className="flex items-center gap-4 rounded-xl bg-white p-4 md:p-6 shadow-sm border border-zinc-100">
-            <div className={`flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full ${card.bg} ${card.color}`}>
-              <card.icon size={20} className="md:w-6 md:h-6" />
+          <div key={i} className="flex items-center gap-4 rounded-2xl bg-white p-5 md:p-6 shadow-sm border border-stone-200 transition-transform hover:-translate-y-1 hover:shadow-md">
+            <div className={`flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-xl ${card.bg} ${card.color}`}>
+              <card.icon size={24} />
             </div>
             <div>
-              <p className="text-xs md:text-sm font-medium text-zinc-500">{card.title}</p>
-              <p className="text-xl md:text-2xl font-bold text-zinc-900">{card.value}</p>
+              <p className="text-sm font-medium text-stone-500">{card.title}</p>
+              <p className="text-2xl md:text-3xl font-bold font-heading text-stone-900">{card.value}</p>
             </div>
           </div>
         ))}
@@ -150,87 +150,87 @@ export default function Dashboard() {
 
       <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Top Products */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
+        <div className="rounded-2xl border border-stone-200 bg-white p-5 md:p-6 shadow-sm flex flex-col h-full">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
               <Activity size={20} />
             </div>
-            <h2 className="text-lg font-bold text-zinc-900">Mais Vendidos Hoje</h2>
+            <h2 className="text-xl font-bold font-heading text-stone-900">Mais Vendidos Hoje</h2>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1">
             {topProducts.length > 0 ? topProducts.map((product, i) => (
-              <div key={i} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+              <div key={i} className="flex items-center justify-between border-b border-stone-100 pb-4 last:border-0 last:pb-0">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 text-xs font-bold text-zinc-500">{i + 1}</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-sm font-bold text-stone-600">{i + 1}</span>
                   <div>
-                    <p className="font-medium text-zinc-900">{product.name}</p>
-                    <p className="text-xs text-zinc-500">{product.quantity} unidades vendidas</p>
+                    <p className="font-bold text-stone-900">{product.name}</p>
+                    <p className="text-xs text-stone-500">{product.quantity} unidades vendidas</p>
                   </div>
                 </div>
-                <span className="font-bold text-zinc-900 text-sm md:text-base">R$ {product.revenue.toFixed(2)}</span>
+                <span className="font-bold text-stone-900 text-sm md:text-base">R$ {product.revenue.toFixed(2)}</span>
               </div>
             )) : (
-              <p className="text-center text-sm text-zinc-500 py-4">Nenhuma venda registrada hoje.</p>
+              <p className="text-center text-sm text-stone-500 py-4">Nenhuma venda registrada hoje.</p>
             )}
           </div>
         </div>
 
         {/* Payment Methods */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
+        <div className="rounded-2xl border border-stone-200 bg-white p-5 md:p-6 shadow-sm flex flex-col h-full">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-600">
               <CreditCard size={20} />
             </div>
-            <h2 className="text-lg font-bold text-zinc-900">Formas de Pagamento</h2>
+            <h2 className="text-xl font-bold font-heading text-stone-900">Formas de Pagamento</h2>
           </div>
-          <div className="space-y-5">
+          <div className="space-y-6 flex-1">
             {totalPayments > 0 ? (Object.entries(paymentMethods) as [string, number][]).map(([method, amount]) => {
               if (amount === 0) return null;
               const percentage = ((amount / totalPayments) * 100).toFixed(1);
               return (
                 <div key={method}>
                   <div className="mb-2 flex justify-between text-sm">
-                    <span className="font-medium text-zinc-700">{paymentMethodNames[method]}</span>
-                    <span className="font-bold text-zinc-900">R$ {amount.toFixed(2)} ({percentage}%)</span>
+                    <span className="font-bold text-stone-700">{paymentMethodNames[method]}</span>
+                    <span className="font-bold text-stone-900">R$ {amount.toFixed(2)} <span className="text-stone-400 font-normal">({percentage}%)</span></span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-stone-100">
                     <div 
-                      className={`h-full ${paymentMethodColors[method]}`} 
+                      className={`h-full ${paymentMethodColors[method]} rounded-full`} 
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
                 </div>
               );
             }) : (
-              <p className="text-center text-sm text-zinc-500 py-4">Nenhum pagamento recebido hoje.</p>
+              <p className="text-center text-sm text-stone-500 py-4">Nenhum pagamento recebido hoje.</p>
             )}
           </div>
         </div>
 
         {/* Table Status */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 md:p-6 shadow-sm">
+        <div className="rounded-2xl border border-stone-200 bg-white p-5 md:p-6 shadow-sm flex flex-col h-full">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
               <PieChart size={20} />
             </div>
-            <h2 className="text-lg font-bold text-zinc-900">Status das Mesas</h2>
+            <h2 className="text-xl font-bold font-heading text-stone-900">Status das Mesas</h2>
           </div>
-          <div className="grid grid-cols-2 gap-3 md:gap-4">
-            <div className="rounded-xl bg-zinc-50 p-3 md:p-4 text-center">
-              <p className="text-xs md:text-sm font-medium text-zinc-500">Total de Mesas</p>
-              <p className="text-2xl md:text-3xl font-bold text-zinc-900">{tables.length}</p>
+          <div className="grid grid-cols-2 gap-3 md:gap-4 flex-1 content-start">
+            <div className="rounded-2xl bg-stone-50 p-4 text-center border border-stone-100">
+              <p className="text-xs md:text-sm font-medium text-stone-500 mb-1">Total de Mesas</p>
+              <p className="text-3xl md:text-4xl font-bold font-heading text-stone-900">{tables.length}</p>
             </div>
-            <div className="rounded-xl bg-green-50 p-3 md:p-4 text-center">
-              <p className="text-xs md:text-sm font-medium text-green-600">Livres</p>
-              <p className="text-2xl md:text-3xl font-bold text-green-700">{tableStatusCount.free}</p>
+            <div className="rounded-2xl bg-green-50 p-4 text-center border border-green-100">
+              <p className="text-xs md:text-sm font-medium text-green-600 mb-1">Livres</p>
+              <p className="text-3xl md:text-4xl font-bold font-heading text-green-700">{tableStatusCount.free}</p>
             </div>
-            <div className="rounded-xl bg-orange-50 p-3 md:p-4 text-center">
-              <p className="text-xs md:text-sm font-medium text-orange-600">Ocupadas</p>
-              <p className="text-2xl md:text-3xl font-bold text-orange-700">{tableStatusCount.occupied}</p>
+            <div className="rounded-2xl bg-orange-50 p-4 text-center border border-orange-100">
+              <p className="text-xs md:text-sm font-medium text-orange-600 mb-1">Ocupadas</p>
+              <p className="text-3xl md:text-4xl font-bold font-heading text-orange-700">{tableStatusCount.occupied}</p>
             </div>
-            <div className="rounded-xl bg-red-50 p-3 md:p-4 text-center">
-              <p className="text-xs md:text-sm font-medium text-red-600">Fechando</p>
-              <p className="text-2xl md:text-3xl font-bold text-red-700">{tableStatusCount.billing}</p>
+            <div className="rounded-2xl bg-red-50 p-4 text-center border border-red-100">
+              <p className="text-xs md:text-sm font-medium text-red-600 mb-1">Fechando</p>
+              <p className="text-3xl md:text-4xl font-bold font-heading text-red-700">{tableStatusCount.billing}</p>
             </div>
           </div>
         </div>

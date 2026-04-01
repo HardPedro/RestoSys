@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, getDocs, runTransaction } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, getDocs, runTransaction, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Plus, Minus, ShoppingBag, ArrowLeft, CheckCircle, Clock, Utensils, Wine, LogOut, Printer } from 'lucide-react';
@@ -285,12 +285,12 @@ export default function WaiterApp() {
         mesa: currentTable.number === 0 ? 'BAR' : currentTable.number.toString()
       };
       
-      // Send to local agent silently, no fallback needed for kitchen/bar if offline
-      fetch('http://localhost:17321/print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(printReq)
-      }).catch(() => {});
+      // Send to printJobs collection so the PC can pick it up and print locally
+      await addDoc(collection(db, 'printJobs'), {
+        ...printReq,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
 
       setCart([]);
       setView('order');
@@ -369,17 +369,17 @@ export default function WaiterApp() {
 
   if (view === 'tables') {
     return (
-      <div className="p-4 pb-20 md:p-8">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="p-4 pb-24 md:p-8 max-w-5xl mx-auto">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900">Mesas</h1>
-            <p className="text-sm text-zinc-500">Olá, {userData?.name}</p>
+            <h1 className="text-3xl font-bold font-heading tracking-tight text-stone-900">Mesas</h1>
+            <p className="text-sm font-medium text-stone-500 mt-1">Olá, {userData?.name}</p>
           </div>
           <div className="flex items-center gap-4">
             {tables.length === 0 && (
-              <button onClick={setupTables} className="text-sm text-blue-600">Gerar Mesas</button>
+              <button onClick={setupTables} className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">Gerar Mesas</button>
             )}
-            <button onClick={handleLogout} className="text-zinc-400 hover:text-red-600">
+            <button onClick={handleLogout} className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-100 text-stone-500 hover:bg-red-50 hover:text-red-600 transition-colors">
               <LogOut size={20} />
             </button>
           </div>
@@ -389,15 +389,15 @@ export default function WaiterApp() {
             <button
               key={table.id}
               onClick={() => handleTableClick(table)}
-              className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 p-4 transition-all ${
-                table.status === 'free' ? 'border-zinc-200 bg-white text-zinc-600 hover:border-orange-500' :
-                table.status === 'occupied' ? 'border-orange-500 bg-orange-50 text-orange-700' :
-                'border-red-500 bg-red-50 text-red-700'
+              className={`flex aspect-square flex-col items-center justify-center rounded-3xl border-2 p-4 transition-all duration-200 active:scale-95 ${
+                table.status === 'free' ? 'border-stone-200 bg-white text-stone-600 hover:border-orange-400 hover:shadow-md' :
+                table.status === 'occupied' ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-sm' :
+                'border-red-500 bg-red-50 text-red-700 shadow-sm'
               }`}
             >
-              <span className="text-3xl font-bold">{table.number === 0 ? 'BAR' : table.number}</span>
-              <span className="mt-2 text-xs font-medium uppercase tracking-wider">
-                {table.status === 'free' ? 'Livre' : table.status === 'occupied' ? 'Ocupada' : 'Fechada'}
+              <span className="text-4xl font-bold font-heading">{table.number === 0 ? 'BAR' : table.number}</span>
+              <span className="mt-3 text-xs font-bold uppercase tracking-widest opacity-80">
+                {table.status === 'free' ? 'Livre' : table.status === 'occupied' ? 'Ocupada' : 'Fechando'}
               </span>
             </button>
           ))}
@@ -408,40 +408,42 @@ export default function WaiterApp() {
 
   if (view === 'order') {
     return (
-      <div className="flex h-full flex-col bg-zinc-50 pb-20 md:pb-0">
-        <div className="flex items-center justify-between border-b bg-white p-4 shadow-sm">
-          <button onClick={() => { setView('tables'); setSelectedTable(null); }} className="flex items-center gap-2 text-zinc-600">
+      <div className="flex h-full flex-col bg-stone-50 pb-20 md:pb-0 font-sans">
+        <div className="flex items-center justify-between border-b border-stone-200 bg-white p-4 shadow-sm z-10 sticky top-0">
+          <button onClick={() => { setView('tables'); setSelectedTable(null); }} className="flex items-center gap-2 text-stone-600 font-medium hover:text-stone-900 transition-colors bg-stone-100 px-3 py-2 rounded-xl">
             <ArrowLeft size={20} /> Voltar
           </button>
-          <h2 className="text-lg font-bold">Mesa {currentTable?.number}</h2>
-          <div className="w-20"></div>
+          <h2 className="text-xl font-bold font-heading text-stone-900">Mesa {currentTable?.number === 0 ? 'BAR' : currentTable?.number}</h2>
+          <div className="w-[88px]"></div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 max-w-3xl mx-auto w-full">
           {orderItems.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-zinc-400">
-              <ShoppingBag size={48} className="mb-4 opacity-20" />
-              <p>Nenhum pedido nesta mesa</p>
+            <div className="flex h-full flex-col items-center justify-center text-stone-400">
+              <div className="h-24 w-24 bg-stone-100 rounded-full flex items-center justify-center mb-6">
+                <ShoppingBag size={40} className="text-stone-300" />
+              </div>
+              <p className="font-medium text-stone-500">Nenhum pedido nesta mesa</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {orderItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${item.type === 'food' ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`}>
-                      {item.type === 'food' ? <Utensils size={18} /> : <Wine size={18} />}
+                <div key={item.id} className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm border border-stone-100">
+                  <div className="flex items-center gap-4">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${item.type === 'food' ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`}>
+                      {item.type === 'food' ? <Utensils size={20} /> : <Wine size={20} />}
                     </div>
                     <div>
-                      <p className="font-medium text-zinc-900">{item.quantity}x {item.productName}</p>
-                      {item.notes && <p className="text-xs text-zinc-500">Obs: {item.notes}</p>}
+                      <p className="font-bold text-stone-900 text-base">{item.quantity}x {item.productName}</p>
+                      {item.notes && <p className="text-xs text-stone-500 mt-0.5 bg-stone-100 inline-block px-2 py-0.5 rounded-md">Obs: {item.notes}</p>}
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <span className="font-medium">R$ {(item.price * item.quantity).toFixed(2)}</span>
-                    <span className={`text-xs font-medium uppercase ${
-                      item.status === 'pending' ? 'text-orange-500' :
-                      item.status === 'preparing' ? 'text-blue-500' :
-                      item.status === 'ready' ? 'text-green-500' : 'text-zinc-400'
+                    <span className="font-bold text-stone-900">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider mt-1 px-2 py-0.5 rounded-full ${
+                      item.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                      item.status === 'preparing' ? 'bg-blue-100 text-blue-700' :
+                      item.status === 'ready' ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'
                     }`}>
                       {item.status === 'pending' ? 'Pendente' :
                        item.status === 'preparing' ? 'Preparando' :
@@ -454,18 +456,18 @@ export default function WaiterApp() {
           )}
         </div>
 
-        <div className="border-t bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="border-t border-stone-100 bg-white p-4 shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.05)] z-10 sticky bottom-0 md:static">
           {currentOrder && (
             <div className="mb-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-zinc-500">Total Parcial</span>
-              <span className="text-xl font-bold text-zinc-900">R$ {currentOrder.total.toFixed(2)}</span>
+              <span className="text-sm font-bold text-stone-500 uppercase tracking-wider">Total Parcial</span>
+              <span className="text-2xl font-bold font-heading text-stone-900">R$ {currentOrder.total.toFixed(2)}</span>
             </div>
           )}
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => setView('menu')}
               disabled={currentTable?.status === 'billing'}
-              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-orange-600 py-3 font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-orange-600 py-3 font-bold text-white hover:bg-orange-700 shadow-md shadow-orange-600/20 disabled:opacity-50 disabled:shadow-none transition-all active:scale-95"
             >
               <Plus size={20} />
               <span className="text-xs">Adicionar</span>
@@ -473,7 +475,7 @@ export default function WaiterApp() {
             <button
               onClick={handlePrint}
               disabled={!currentOrder}
-              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-zinc-100 py-3 font-medium text-zinc-600 hover:bg-zinc-200 disabled:opacity-50"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-stone-100 py-3 font-bold text-stone-600 hover:bg-stone-200 disabled:opacity-50 transition-all active:scale-95"
             >
               <Printer size={20} />
               <span className="text-xs">Imprimir</span>
@@ -481,7 +483,7 @@ export default function WaiterApp() {
             <button
               onClick={requestCheckout}
               disabled={!currentOrder || currentTable?.status === 'billing'}
-              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-zinc-900 py-3 font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-stone-900 py-3 font-bold text-white hover:bg-stone-800 disabled:opacity-50 transition-all active:scale-95"
             >
               <CheckCircle size={20} />
               <span className="text-xs">Fechar</span>
@@ -495,39 +497,45 @@ export default function WaiterApp() {
   if (view === 'menu') {
     const categories = ['food', 'drink'];
     return (
-      <div className="flex h-full flex-col bg-zinc-50 pb-20 md:pb-0">
-        <div className="flex items-center justify-between border-b bg-white p-4 shadow-sm">
-          <button onClick={() => setView('order')} className="flex items-center gap-2 text-zinc-600">
+      <div className="flex h-full flex-col bg-stone-50 pb-20 md:pb-0 font-sans">
+        <div className="flex items-center justify-between border-b border-stone-200 bg-white p-4 shadow-sm z-10 sticky top-0">
+          <button onClick={() => setView('order')} className="flex items-center gap-2 text-stone-600 font-medium hover:text-stone-900 transition-colors bg-stone-100 px-3 py-2 rounded-xl">
             <ArrowLeft size={20} /> Voltar
           </button>
-          <h2 className="text-lg font-bold">Cardápio</h2>
-          <button onClick={() => setView('cart')} className="relative flex items-center p-2 text-zinc-900">
+          <h2 className="text-xl font-bold font-heading text-stone-900">Cardápio</h2>
+          <button onClick={() => setView('cart')} className="relative flex items-center p-2 text-stone-900 hover:bg-stone-100 rounded-xl transition-colors">
             <ShoppingBag size={24} />
             {cart.length > 0 && (
-              <span className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white">
+              <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white shadow-sm border-2 border-white">
                 {cart.reduce((a,b) => a + b.quantity, 0)}
               </span>
             )}
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 max-w-3xl mx-auto w-full">
           {categories.map(cat => (
-            <div key={cat} className="mb-8">
-              <h3 className="mb-4 text-lg font-bold capitalize text-zinc-900">{cat === 'food' ? 'Comidas' : 'Bebidas'}</h3>
-              <div className="grid gap-4 sm:grid-cols-2">
+            <div key={cat} className="mb-8 last:mb-0">
+              <h3 className="mb-4 flex items-center gap-2 text-lg font-bold font-heading text-stone-900">
+                {cat === 'food' ? <Utensils className="text-orange-600" /> : <Wine className="text-purple-600" />}
+                {cat === 'food' ? 'Comidas' : 'Bebidas'}
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2">
                 {products.filter(p => p.category === cat).map(product => (
-                  <div key={product.id} className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-                    <div>
-                      <p className="font-medium text-zinc-900">{product.name}</p>
-                      <p className="text-sm font-bold text-orange-600">R$ {product.price.toFixed(2)}</p>
+                  <div key={product.id} className="flex flex-col justify-between rounded-2xl bg-white p-4 shadow-sm border border-stone-100">
+                    <div className="mb-4">
+                      <h4 className="font-bold text-stone-900 text-base">{product.name}</h4>
+                      <p className="text-sm text-stone-500 mt-1 line-clamp-2">{product.description}</p>
                     </div>
-                    <button
-                      onClick={() => addToCart(product)}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-600 hover:bg-orange-200"
-                    >
-                      <Plus size={20} />
-                    </button>
+                    <div className="flex items-center justify-between mt-auto pt-2 border-t border-stone-50">
+                      <span className="font-bold text-stone-900">R$ {product.price.toFixed(2)}</span>
+                      <button
+                        onClick={() => addToCart(product)}
+                        className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 hover:bg-orange-200 transition-colors active:scale-95"
+                      >
+                        <Plus size={20} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -541,38 +549,43 @@ export default function WaiterApp() {
   if (view === 'cart') {
     const total = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
     return (
-      <div className="flex h-full flex-col bg-zinc-50 pb-20 md:pb-0">
-        <div className="flex items-center justify-between border-b bg-white p-4 shadow-sm">
-          <button onClick={() => setView('menu')} className="flex items-center gap-2 text-zinc-600">
+      <div className="flex h-full flex-col bg-stone-50 pb-20 md:pb-0 font-sans">
+        <div className="flex items-center justify-between border-b border-stone-200 bg-white p-4 shadow-sm z-10 sticky top-0">
+          <button onClick={() => setView('menu')} className="flex items-center gap-2 text-stone-600 font-medium hover:text-stone-900 transition-colors bg-stone-100 px-3 py-2 rounded-xl">
             <ArrowLeft size={20} /> Voltar
           </button>
-          <h2 className="text-lg font-bold">Novo Pedido</h2>
-          <div className="w-20"></div>
+          <h2 className="text-xl font-bold font-heading text-stone-900">Novo Pedido</h2>
+          <div className="w-[88px]"></div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 max-w-3xl mx-auto w-full">
           {cart.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-zinc-500">Carrinho vazio</div>
+            <div className="flex h-full flex-col items-center justify-center text-stone-400">
+              <div className="h-24 w-24 bg-stone-100 rounded-full flex items-center justify-center mb-6">
+                <ShoppingBag size={40} className="text-stone-300" />
+              </div>
+              <p className="font-medium text-stone-500">Carrinho vazio</p>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {cart.map(item => (
-                <div key={item.product.id} className="rounded-xl bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="font-medium text-zinc-900">{item.product.name}</p>
-                    <p className="font-bold text-orange-600">R$ {(item.product.price * item.quantity).toFixed(2)}</p>
+                <div key={item.product.id} className="rounded-2xl bg-white p-4 shadow-sm border border-stone-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="font-bold text-stone-900 text-base">{item.product.name}</p>
+                    <p className="font-bold text-stone-900">R$ {(item.product.price * item.quantity).toFixed(2)}</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 rounded-lg border border-zinc-200 p-1">
-                      <button onClick={() => updateCartQuantity(item.product.id, -1)} className="flex h-8 w-8 items-center justify-center rounded bg-zinc-100 text-zinc-600"><Minus size={16} /></button>
-                      <span className="w-6 text-center font-medium">{item.quantity}</span>
-                      <button onClick={() => updateCartQuantity(item.product.id, 1)} className="flex h-8 w-8 items-center justify-center rounded bg-zinc-100 text-zinc-600"><Plus size={16} /></button>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 rounded-xl border border-stone-200 p-1 w-fit">
+                      <button onClick={() => updateCartQuantity(item.product.id, -1)} className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"><Minus size={16} /></button>
+                      <span className="w-6 text-center font-bold text-stone-900">{item.quantity}</span>
+                      <button onClick={() => updateCartQuantity(item.product.id, 1)} className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"><Plus size={16} /></button>
                     </div>
                     <input
                       type="text"
-                      placeholder="Observações..."
+                      placeholder="Observações (opcional)..."
                       value={item.notes}
                       onChange={(e) => setCart(prev => prev.map(i => i.product.id === item.product.id ? { ...i, notes: e.target.value } : i))}
-                      className="w-1/2 rounded-lg border border-zinc-200 p-2 text-sm"
+                      className="w-full sm:w-1/2 rounded-xl border border-stone-200 p-2.5 text-sm bg-stone-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -581,15 +594,15 @@ export default function WaiterApp() {
           )}
         </div>
 
-        <div className="border-t bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="border-t border-stone-100 bg-white p-4 shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.05)] z-10 sticky bottom-0 md:static">
           <div className="mb-4 flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-500">Total</span>
-            <span className="text-xl font-bold text-zinc-900">R$ {total.toFixed(2)}</span>
+            <span className="text-sm font-bold text-stone-500 uppercase tracking-wider">Total</span>
+            <span className="text-2xl font-bold font-heading text-stone-900">R$ {total.toFixed(2)}</span>
           </div>
           <button
             onClick={sendOrder}
             disabled={cart.length === 0}
-            className="w-full rounded-xl bg-orange-600 py-3 font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+            className="w-full rounded-2xl bg-orange-600 py-3.5 font-bold text-white hover:bg-orange-700 shadow-md shadow-orange-600/20 disabled:opacity-50 disabled:shadow-none transition-all active:scale-95"
           >
             Enviar para Preparo
           </button>

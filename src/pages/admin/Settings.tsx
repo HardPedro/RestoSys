@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { QrCode, Smartphone, Globe, Download, Printer, Database, Settings as SettingsIcon, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
-import { collection, addDoc, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, doc, setDoc, getDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 export default function Settings() {
@@ -17,6 +17,8 @@ export default function Settings() {
   // Local Print Agent State
   const [agentStatus, setAgentStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [printers, setPrinters] = useState<string[]>([]);
+  const [pendingJobs, setPendingJobs] = useState<any[]>([]);
+  const agentUrl = 'http://localhost:17321'; // Using localhost instead of 127.0.0.1 for better browser compatibility with Mixed Content
   const [localConfig, setLocalConfig] = useState({
     cozinha: { printer: '', tipo: 'termica', largura: 80 },
     bar: { printer: '', tipo: 'termica', largura: 58 },
@@ -28,14 +30,43 @@ export default function Settings() {
     if (savedPrinter) {
       setPrinterType(savedPrinter);
     }
+    
     checkAgentStatus();
     const interval = setInterval(checkAgentStatus, 5000);
-    return () => clearInterval(interval);
+
+    // Listen for pending print jobs
+    const q = query(collection(db, 'printJobs'), where('status', '==', 'pending'));
+    const unsubJobs = onSnapshot(q, (snapshot) => {
+      setPendingJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => {
+      clearInterval(interval);
+      unsubJobs();
+    };
   }, []);
+
+  const testAgentConnection = async () => {
+    setAgentStatus('checking');
+    try {
+      const res = await fetch(`${agentUrl}/health`, { mode: 'cors' });
+      if (res.ok) {
+        setAgentStatus('online');
+        fetchPrinters();
+        toast.success('Conexão com o agente estabelecida!');
+      } else {
+        throw new Error('Agent returned non-ok status');
+      }
+    } catch (e) {
+      setAgentStatus('offline');
+      console.error('Agent test failed:', e);
+      toast.error('Não foi possível conectar ao agente. Verifique se ele está rodando e se o navegador permite conteúdo inseguro.');
+    }
+  };
 
   const checkAgentStatus = async () => {
     try {
-      const res = await fetch('http://localhost:17321/health');
+      const res = await fetch(`${agentUrl}/health`);
       if (res.ok) {
         if (agentStatus !== 'online') {
           setAgentStatus('online');
@@ -51,7 +82,7 @@ export default function Settings() {
 
   const fetchPrinters = async () => {
     try {
-      const res = await fetch('http://localhost:17321/printers');
+      const res = await fetch(`${agentUrl}/printers`);
       if (res.ok) {
         const data = await res.json();
         setPrinters(data);
@@ -63,7 +94,7 @@ export default function Settings() {
 
   const saveLocalConfig = async () => {
     try {
-      const res = await fetch('http://localhost:17321/config', {
+      const res = await fetch(`${agentUrl}/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(localConfig)
@@ -223,119 +254,154 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-4 md:p-8">
-      <h1 className="mb-8 text-2xl md:text-3xl font-bold text-zinc-900">Configurações</h1>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <h1 className="mb-8 text-2xl md:text-3xl font-bold font-heading tracking-tight text-stone-900">Configurações</h1>
 
       <div className="grid gap-6 md:gap-8 grid-cols-1 lg:grid-cols-2">
         {/* Waiter QR Code */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
-              <Smartphone size={20} className="md:w-6 md:h-6" />
+        <div className="rounded-3xl border border-stone-200 bg-white p-6 md:p-8 shadow-sm">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 border border-orange-100">
+              <Smartphone size={24} className="md:w-7 md:h-7" />
             </div>
             <div>
-              <h2 className="text-lg md:text-xl font-bold text-zinc-900">Acesso Garçom</h2>
-              <p className="text-xs md:text-sm text-zinc-500">QR Code para os garçons conectarem seus celulares</p>
+              <h2 className="text-xl md:text-2xl font-bold font-heading text-stone-900">Acesso Garçom</h2>
+              <p className="text-sm text-stone-500">QR Code para os garçons conectarem seus celulares</p>
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center rounded-xl bg-zinc-50 p-6 md:p-8">
-            <div className="bg-white p-2 rounded-lg shadow-sm">
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-stone-50 p-6 md:p-8 border border-stone-100">
+            <div className="bg-white p-3 rounded-xl shadow-sm border border-stone-200">
               <QRCodeSVG id="waiter-qr" value={waiterLoginUrl} size={180} level="H" includeMargin />
             </div>
-            <p className="mt-4 text-center text-sm font-medium text-zinc-600">
+            <p className="mt-5 text-center text-sm font-bold text-stone-700">
               Aponte a câmera para conectar
             </p>
-            <code className="mt-2 w-full break-all rounded bg-zinc-200 px-2 py-1 text-center text-[10px] md:text-xs text-zinc-700">
+            <code className="mt-3 w-full break-all rounded-lg bg-stone-200/50 px-3 py-2 text-center text-xs font-mono text-stone-700 border border-stone-200">
               {waiterLoginUrl}
             </code>
             <button
               onClick={() => downloadQR('waiter-qr', 'qr-acesso-garcom')}
-              className="mt-4 flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+              className="mt-5 flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 shadow-md shadow-orange-600/20 transition-all active:scale-95"
             >
-              <Download size={16} /> Baixar QR Code
+              <Download size={18} /> Baixar QR Code
             </button>
           </div>
         </div>
 
         {/* Customer Menu QR Code */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-              <Globe size={20} className="md:w-6 md:h-6" />
+        <div className="rounded-3xl border border-stone-200 bg-white p-6 md:p-8 shadow-sm">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-100">
+              <Globe size={24} className="md:w-7 md:h-7" />
             </div>
             <div>
-              <h2 className="text-lg md:text-xl font-bold text-zinc-900">Cardápio Digital</h2>
-              <p className="text-xs md:text-sm text-zinc-500">QR Code único para visualização dos clientes</p>
+              <h2 className="text-xl md:text-2xl font-bold font-heading text-stone-900">Cardápio Digital</h2>
+              <p className="text-sm text-stone-500">QR Code único para visualização dos clientes</p>
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center rounded-xl bg-zinc-50 p-6 md:p-8">
-            <div className="bg-white p-2 rounded-lg shadow-sm">
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-stone-50 p-6 md:p-8 border border-stone-100">
+            <div className="bg-white p-3 rounded-xl shadow-sm border border-stone-200">
               <QRCodeSVG id="menu-qr" value={customerMenuUrl} size={180} level="H" includeMargin />
             </div>
-            <p className="mt-4 text-center text-sm font-medium text-zinc-600">
+            <p className="mt-5 text-center text-sm font-bold text-stone-700">
               Disponibilize nas mesas
             </p>
-            <code className="mt-2 w-full break-all rounded bg-zinc-200 px-2 py-1 text-center text-[10px] md:text-xs text-zinc-700">
+            <code className="mt-3 w-full break-all rounded-lg bg-stone-200/50 px-3 py-2 text-center text-xs font-mono text-stone-700 border border-stone-200">
               {customerMenuUrl}
             </code>
             <button
               onClick={() => downloadQR('menu-qr', 'qr-cardapio-geral')}
-              className="mt-4 flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="mt-5 flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95"
             >
-              <Download size={16} /> Baixar QR Code
+              <Download size={18} /> Baixar QR Code
             </button>
           </div>
         </div>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
+      <div className="mt-8 rounded-3xl border border-stone-200 bg-white p-6 md:p-8 shadow-sm">
         <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-              <SettingsIcon size={20} className="md:w-6 md:h-6" />
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+              <SettingsIcon size={24} className="md:w-7 md:h-7" />
             </div>
             <div>
-              <h2 className="text-lg md:text-xl font-bold text-zinc-900">Agente de Impressão Local</h2>
-              <p className="text-xs md:text-sm text-zinc-500">Impressão silenciosa para Cozinha, Bar e Caixa</p>
+              <h2 className="text-xl md:text-2xl font-bold font-heading text-stone-900">Agente de Impressão Local</h2>
+              <p className="text-sm text-stone-500">Impressão silenciosa para Cozinha, Bar e Caixa</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {agentStatus === 'checking' && <span className="text-sm text-zinc-500">Verificando...</span>}
-            {agentStatus === 'online' && <span className="flex items-center gap-1 text-sm font-bold text-green-600"><CheckCircle size={16} /> Online</span>}
-            {agentStatus === 'offline' && <span className="flex items-center gap-1 text-sm font-bold text-red-600"><XCircle size={16} /> Offline</span>}
+          <div className="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200">
+            {agentStatus === 'checking' && <span className="text-sm font-bold text-stone-500">Verificando...</span>}
+            {agentStatus === 'online' && <span className="flex items-center gap-1.5 text-sm font-bold text-green-600"><CheckCircle size={16} /> Online</span>}
+            {agentStatus === 'offline' && <span className="flex items-center gap-1.5 text-sm font-bold text-red-600"><XCircle size={16} /> Offline</span>}
           </div>
         </div>
 
         {agentStatus === 'offline' && (
-          <div className="mb-6 rounded-lg bg-orange-50 p-4 border border-orange-200">
-            <p className="text-sm text-orange-800 mb-3">
-              O agente local não está rodando. Para habilitar a impressão automática e silenciosa, baixe o executável abaixo e deixe-o rodando no computador do caixa.
-            </p>
-            <a 
-              href="/PrintAgent.exe" 
-              download
-              className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
-            >
-              <Download size={16} /> Baixar Agente (.exe)
-            </a>
+          <div className="mb-6 rounded-2xl bg-orange-50 p-6 border border-orange-200">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600 shrink-0">
+                <XCircle size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-orange-900 mb-1">Agente Offline ou Bloqueado</h3>
+                <p className="text-sm font-medium text-orange-800 mb-4 leading-relaxed">
+                  O agente local não está rodando ou o navegador está bloqueando a conexão segura (Mixed Content). 
+                  Como o sistema web roda em HTTPS e o agente em HTTP (localhost), você precisa autorizar a conexão.
+                </p>
+                
+                <div className="bg-white/50 rounded-xl p-4 mb-4 border border-orange-200/50">
+                  <p className="text-xs font-bold text-orange-900 uppercase tracking-wider mb-2">Como Corrigir:</p>
+                  <ol className="list-decimal ml-4 space-y-1 text-sm text-orange-800">
+                    <li>Certifique-se que o <code>PrintAgent.exe</code> está aberto (janela preta).</li>
+                    <li>Na barra de endereços (onde fica o link), clique no ícone de <strong>Cadeado</strong> ou <strong>Configurações</strong>.</li>
+                    <li>Vá em <strong>Configurações do Site</strong>.</li>
+                    <li>Procure por <strong>Conteúdo Inseguro</strong> e mude para <strong>Permitir</strong>.</li>
+                    <li>Recarregue esta página.</li>
+                  </ol>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button 
+                    onClick={testAgentConnection}
+                    className="flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 shadow-md shadow-orange-600/20 transition-all active:scale-95"
+                  >
+                    Tentar Novamente
+                  </button>
+                  <button 
+                    onClick={() => window.open(`${agentUrl}/health`, '_blank')}
+                    className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-stone-600 border border-stone-200 hover:bg-stone-50 transition-all active:scale-95"
+                  >
+                    Abrir URL do Agente (Autorizar)
+                  </button>
+                  <a 
+                    href="/PrintAgent.exe" 
+                    download
+                    className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-orange-600 border border-orange-200 hover:bg-orange-50 transition-all active:scale-95"
+                  >
+                    <Download size={18} /> Baixar Agente (.exe)
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {agentStatus === 'online' && (
           <div className="grid gap-6 md:grid-cols-3">
             {['cozinha', 'bar', 'caixa'].map((setor) => (
-              <div key={setor} className="rounded-xl border border-zinc-200 p-4">
-                <h3 className="mb-3 font-bold capitalize text-zinc-900">{setor}</h3>
+              <div key={setor} className="rounded-2xl border border-stone-200 bg-stone-50 p-5">
+                <h3 className="mb-4 font-bold font-heading text-lg capitalize text-stone-900">{setor}</h3>
                 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-700">Impressora</label>
+                    <label className="mb-1.5 block text-xs font-bold text-stone-700 uppercase tracking-wider">Impressora</label>
                     <select
                       value={localConfig[setor as keyof typeof localConfig].printer}
                       onChange={(e) => setLocalConfig(prev => ({ ...prev, [setor]: { ...prev[setor as keyof typeof localConfig], printer: e.target.value } }))}
-                      className="w-full rounded-lg border border-zinc-300 p-2 text-sm outline-none focus:border-indigo-500"
+                      className="w-full rounded-xl border border-stone-200 bg-white p-2.5 text-sm text-stone-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     >
                       <option value="">Selecione...</option>
                       {printers.map(p => <option key={p} value={p}>{p}</option>)}
@@ -343,11 +409,11 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-700">Tipo</label>
+                    <label className="mb-1.5 block text-xs font-bold text-stone-700 uppercase tracking-wider">Tipo</label>
                     <select
                       value={localConfig[setor as keyof typeof localConfig].tipo}
                       onChange={(e) => setLocalConfig(prev => ({ ...prev, [setor]: { ...prev[setor as keyof typeof localConfig], tipo: e.target.value } }))}
-                      className="w-full rounded-lg border border-zinc-300 p-2 text-sm outline-none focus:border-indigo-500"
+                      className="w-full rounded-xl border border-stone-200 bg-white p-2.5 text-sm text-stone-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     >
                       <option value="termica">Térmica</option>
                       <option value="normal">Normal (A4)</option>
@@ -356,11 +422,11 @@ export default function Settings() {
 
                   {localConfig[setor as keyof typeof localConfig].tipo === 'termica' && (
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-zinc-700">Largura (mm)</label>
+                      <label className="mb-1.5 block text-xs font-bold text-stone-700 uppercase tracking-wider">Largura (mm)</label>
                       <select
                         value={localConfig[setor as keyof typeof localConfig].largura}
                         onChange={(e) => setLocalConfig(prev => ({ ...prev, [setor]: { ...prev[setor as keyof typeof localConfig], largura: Number(e.target.value) } }))}
-                        className="w-full rounded-lg border border-zinc-300 p-2 text-sm outline-none focus:border-indigo-500"
+                        className="w-full rounded-xl border border-stone-200 bg-white p-2.5 text-sm text-stone-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                       >
                         <option value={80}>80mm</option>
                         <option value={58}>58mm</option>
@@ -374,75 +440,115 @@ export default function Settings() {
         )}
 
         {agentStatus === 'online' && (
-          <div className="mt-6 flex justify-end">
+          <div className="mt-8 flex justify-end">
             <button
               onClick={saveLocalConfig}
-              className="rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white hover:bg-indigo-700"
+              className="rounded-xl bg-indigo-600 px-6 py-2.5 font-bold text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all active:scale-95"
             >
               Salvar Configurações do Agente
             </button>
           </div>
         )}
+
+        {/* Print Queue Section */}
+        <div className="mt-10 border-t border-stone-200 pt-8">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold font-heading text-stone-900">Fila de Impressão</h3>
+              <p className="text-sm text-stone-500">Pedidos aguardando o agente ficar online</p>
+            </div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-stone-600 font-bold text-sm">
+              {pendingJobs.length}
+            </div>
+          </div>
+
+          {pendingJobs.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-stone-200 p-8 text-center">
+              <Printer size={32} className="mx-auto mb-3 text-stone-300" />
+              <p className="text-sm font-medium text-stone-400">Nenhum pedido na fila de espera.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {pendingJobs.map((job) => (
+                <div key={job.id} className="flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600 font-bold">
+                      {job.mesa}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-stone-900">Pedido #{job.pedidoId?.slice(-6)}</p>
+                      <p className="text-xs text-stone-500 capitalize">{job.tipo} • {job.itens?.length} itens</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-orange-500"></span>
+                    <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Aguardando Agente</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">
-            <Printer size={20} className="md:w-6 md:h-6" />
+      <div className="mt-8 rounded-3xl border border-stone-200 bg-white p-6 md:p-8 shadow-sm">
+        <div className="mb-6 flex items-center gap-4">
+          <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-stone-100 text-stone-600 border border-stone-200">
+            <Printer size={24} className="md:w-7 md:h-7" />
           </div>
           <div>
-            <h2 className="text-lg md:text-xl font-bold text-zinc-900">Impressão do Navegador (Fallback)</h2>
-            <p className="text-xs md:text-sm text-zinc-500">Usado caso o Agente Local não esteja disponível</p>
+            <h2 className="text-xl md:text-2xl font-bold font-heading text-stone-900">Impressão do Navegador (Fallback)</h2>
+            <p className="text-sm text-stone-500">Usado caso o Agente Local não esteja disponível</p>
           </div>
         </div>
 
         
         <div className="max-w-md">
-          <label className="mb-2 block text-sm font-medium text-zinc-700">Tamanho da Impressora</label>
+          <label className="mb-2 block text-sm font-bold text-stone-700">Tamanho da Impressora</label>
           <select 
             value={printerType}
             onChange={handlePrinterChange}
-            className="w-full rounded-lg border border-zinc-300 p-3 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+            className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 outline-none focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 transition-all"
           >
             <option value="80mm">Bobina Térmica 80mm (Padrão)</option>
             <option value="58mm">Bobina Térmica 58mm (Pequena)</option>
             <option value="a4">Folha A4 (Impressora Comum)</option>
           </select>
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-3 text-xs font-medium text-stone-500">
             Esta configuração afeta apenas as impressões feitas a partir deste navegador.
           </p>
         </div>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
-        <h2 className="mb-4 text-lg md:text-xl font-bold text-zinc-900">Segurança e Regras</h2>
-        <div className="space-y-4 text-sm text-zinc-600">
-          <p>• Cada garçom deve utilizar seu próprio PIN de acesso.</p>
-          <p>• O sistema previne que duas ordens sejam abertas para a mesma mesa simultaneamente.</p>
-          <p>• Itens enviados para a cozinha/bar não podem ser excluídos sem autorização do gerente.</p>
+      <div className="mt-8 rounded-3xl border border-stone-200 bg-white p-6 md:p-8 shadow-sm">
+        <h2 className="mb-5 text-xl md:text-2xl font-bold font-heading text-stone-900">Segurança e Regras</h2>
+        <div className="space-y-3 text-sm font-medium text-stone-600 bg-stone-50 p-5 rounded-2xl border border-stone-100">
+          <p className="flex items-start gap-2"><span className="text-orange-600 mt-0.5">•</span> Cada garçom deve utilizar seu próprio PIN de acesso.</p>
+          <p className="flex items-start gap-2"><span className="text-orange-600 mt-0.5">•</span> O sistema previne que duas ordens sejam abertas para a mesma mesa simultaneamente.</p>
+          <p className="flex items-start gap-2"><span className="text-orange-600 mt-0.5">•</span> Itens enviados para a cozinha/bar não podem ser excluídos sem autorização do gerente.</p>
         </div>
       </div>
 
       {userData?.email === 'hardsoldisk001@gmail.com' && (
-        <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-8 shadow-sm">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 text-red-600">
-              <Database size={24} />
+        <div className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-6 md:p-8 shadow-sm">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-red-100 text-red-600 border border-red-200">
+              <Database size={24} className="md:w-7 md:h-7" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-red-900">Área do Desenvolvedor</h2>
-              <p className="text-sm text-red-700">Visível apenas para {userData.email}</p>
+              <h2 className="text-xl md:text-2xl font-bold font-heading text-red-900">Área do Desenvolvedor</h2>
+              <p className="text-sm font-medium text-red-700">Visível apenas para {userData.email}</p>
             </div>
           </div>
           
-          <p className="mb-4 text-sm text-red-800">
+          <p className="mb-6 text-sm font-medium text-red-800 bg-red-100/50 p-4 rounded-xl border border-red-100">
             Utilize esta opção para popular o banco de dados com informações sintéticas (pedidos, vendas, itens pendentes) para testar o Dashboard e os fluxos do sistema.
           </p>
           
           <button
             onClick={generateTestData}
             disabled={isGenerating}
-            className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-3 font-bold text-white transition-all hover:bg-red-700 disabled:opacity-50 shadow-md shadow-red-600/20 active:scale-95"
           >
             <Database size={20} />
             {isGenerating ? 'Gerando dados...' : 'Gerar Dados Sintéticos'}

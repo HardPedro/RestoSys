@@ -111,5 +111,17 @@ service cloud.firestore {
       allow read: if isManager();
       allow write: if true; // Waiters create stock movements when ordering
     }
+
+    match /printJobs/{jobId} {
+      allow read: if isCashier() || isManager();
+      allow create: if true; // Waiters can create print jobs
+      allow update: if isCashier() || isManager();
+      allow delete: if isCashier() || isManager();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isManager();
+    }
   }
 }

@@ -224,35 +224,37 @@ export default function Cashier() {
   };
 
   return (
-    <div className="flex h-screen flex-col md:flex-row bg-zinc-50">
+    <div className="flex h-screen flex-col md:flex-row bg-stone-100 font-sans">
       {/* Tables List */}
-      <div className={`${selectedTable ? 'hidden md:block' : 'block'} w-full md:w-1/3 border-r bg-white p-4 md:p-6 overflow-y-auto`}>
-        <h2 className="mb-6 text-2xl font-bold text-zinc-900">Caixa</h2>
+      <div className={`${selectedTable ? 'hidden md:block' : 'block'} w-full md:w-1/3 border-r border-stone-200 bg-white p-4 md:p-6 overflow-y-auto shadow-sm z-10`}>
+        <h2 className="mb-6 text-2xl font-bold font-heading tracking-tight text-stone-900">Caixa</h2>
         <div className="space-y-3">
           {tables.filter(t => t.status !== 'free').map(table => (
             <button
               key={table.id}
               onClick={() => setSelectedTable(table)}
-              className={`flex w-full items-center justify-between rounded-xl border p-4 transition-colors ${
-                selectedTable?.id === table.id ? 'border-orange-500 bg-orange-50' : 'border-zinc-200 hover:bg-zinc-50'
+              className={`flex w-full items-center justify-between rounded-2xl border p-4 transition-all duration-200 ${
+                selectedTable?.id === table.id 
+                  ? 'border-orange-500 bg-orange-50 shadow-md shadow-orange-500/10' 
+                  : 'border-stone-200 hover:border-orange-300 hover:bg-stone-50'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-full font-bold ${
+              <div className="flex items-center gap-4">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl font-bold font-heading text-lg ${
                   table.status === 'billing' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
                 }`}>
                   {table.number === 0 ? 'B' : table.number}
                 </div>
-                <span className="font-medium text-zinc-900">{table.number === 0 ? 'Mesa do Bar' : `Mesa ${table.number}`}</span>
+                <span className="font-bold text-stone-900">{table.number === 0 ? 'Mesa do Bar' : `Mesa ${table.number}`}</span>
               </div>
               {table.status === 'billing' && (
-                <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-600">Fechada</span>
+                <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-600 border border-red-200">Fechada</span>
               )}
             </button>
           ))}
           {tables.filter(t => t.status !== 'free').length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-zinc-400">
-              <Calculator size={48} className="mb-4 opacity-20" />
+            <div className="flex flex-col items-center justify-center py-16 text-stone-400">
+              <Calculator size={64} className="mb-4 opacity-20" />
               <p className="text-center font-medium">Nenhuma mesa ocupada no momento.</p>
             </div>
           )}
@@ -260,95 +262,99 @@ export default function Cashier() {
       </div>
 
       {/* Order Details */}
-      <div className={`${!selectedTable ? 'hidden md:flex' : 'flex'} flex-1 flex-col p-4 md:p-8 overflow-y-auto`}>
+      <div className={`${!selectedTable ? 'hidden md:flex' : 'flex'} flex-1 flex-col p-4 md:p-8 overflow-y-auto bg-stone-50/50`}>
         {currentTable && currentOrder ? (
-          <div className="mx-auto w-full max-w-2xl rounded-2xl bg-white p-4 md:p-8 shadow-sm">
-            <div className="mb-6 flex items-center justify-between">
-              <button onClick={() => setSelectedTable(null)} className="text-zinc-600 font-medium md:hidden">
+          <div className="mx-auto w-full max-w-3xl rounded-3xl bg-white p-6 md:p-10 shadow-sm border border-stone-200">
+            <div className="mb-8 flex items-center justify-between">
+              <button onClick={() => setSelectedTable(null)} className="text-stone-500 hover:text-stone-800 font-medium md:hidden flex items-center gap-2 transition-colors">
                 ← Voltar
               </button>
-              <div className="flex gap-2">
+              <div className="flex gap-3 ml-auto">
                 {currentTable.status === 'billing' && (
                   <button 
                     onClick={handleReopenTable}
-                    className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-bold text-blue-600 hover:bg-blue-200"
+                    className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors"
                   >
                     Reabrir Mesa
                   </button>
                 )}
                 <button 
                   onClick={handleFreeTable}
-                  className="rounded-lg bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 hover:bg-zinc-200"
+                  className="rounded-xl bg-stone-100 px-4 py-2 text-sm font-bold text-stone-600 hover:bg-stone-200 border border-stone-200 transition-colors"
                 >
                   Liberar Mesa
                 </button>
               </div>
             </div>
-            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6">
+            <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between border-b border-stone-100 pb-8">
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-zinc-900">{currentTable.number === 0 ? 'Mesa do Bar' : `Mesa ${currentTable.number}`}</h2>
-                <p className="text-sm text-zinc-500">Pedido #{currentOrder.id.slice(0, 8)}</p>
+                <h2 className="text-3xl md:text-4xl font-bold font-heading tracking-tight text-stone-900 mb-2">{currentTable.number === 0 ? 'Mesa do Bar' : `Mesa ${currentTable.number}`}</h2>
+                <p className="text-sm font-medium text-stone-500 bg-stone-100 inline-block px-3 py-1 rounded-lg">Pedido #{currentOrder.id.slice(0, 8)}</p>
               </div>
-              <div className="sm:text-right">
-                <p className="text-xs md:text-sm font-medium text-zinc-500">Total {selectedItems.length > 0 ? 'Selecionado' : 'da Mesa'}</p>
-                <p className="text-3xl md:text-4xl font-bold text-orange-600">R$ {(selectedItems.length > 0 ? selectedTotal : currentOrder.total).toFixed(2)}</p>
+              <div className="sm:text-right bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                <p className="text-xs md:text-sm font-bold text-stone-500 uppercase tracking-wider mb-1">Total {selectedItems.length > 0 ? 'Selecionado' : 'da Mesa'}</p>
+                <p className="text-4xl md:text-5xl font-bold font-heading text-orange-600">R$ {(selectedItems.length > 0 ? selectedTotal : currentOrder.total).toFixed(2)}</p>
                 {selectedItems.length > 0 && (
-                  <p className="text-xs text-zinc-400">Total Mesa: R$ {currentOrder.total.toFixed(2)}</p>
+                  <p className="text-sm font-medium text-stone-400 mt-2">Total Mesa: R$ {currentOrder.total.toFixed(2)}</p>
                 )}
               </div>
             </div>
 
-            <div className="mb-8 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-zinc-900">Itens Consumidos</h3>
+            <div className="mb-10 space-y-4">
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-lg font-bold font-heading text-stone-900">Itens Consumidos</h3>
                 <button 
                   onClick={() => setSelectedItems(selectedItems.length === orderItems.length ? [] : orderItems.map(i => i.id))}
-                  className="text-xs font-medium text-orange-600 hover:underline"
+                  className="text-sm font-bold text-orange-600 hover:text-orange-700 hover:underline transition-colors"
                 >
                   {selectedItems.length === orderItems.length ? 'Desmarcar todos' : 'Selecionar todos'}
                 </button>
               </div>
-              <div className="max-h-64 overflow-y-auto rounded-xl border border-zinc-100 bg-zinc-50 p-2">
+              <div className="max-h-72 overflow-y-auto rounded-2xl border border-stone-200 bg-stone-50/50 p-3 shadow-inner">
                 {orderItems.map(item => (
                   <button
                     key={item.id}
                     onClick={() => toggleItemSelection(item.id)}
-                    className={`mb-1 flex w-full items-center justify-between rounded-lg p-3 text-sm transition-colors ${
-                      selectedItems.includes(item.id) ? 'bg-orange-100 text-orange-900' : 'hover:bg-white'
+                    className={`mb-2 flex w-full items-center justify-between rounded-xl p-4 text-sm transition-all duration-200 ${
+                      selectedItems.includes(item.id) 
+                        ? 'bg-orange-100 text-orange-900 border border-orange-200 shadow-sm' 
+                        : 'bg-white hover:bg-stone-100 border border-stone-200'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`h-4 w-4 rounded border ${selectedItems.includes(item.id) ? 'border-orange-600 bg-orange-600' : 'border-zinc-300 bg-white'}`}>
-                        {selectedItems.includes(item.id) && <CheckCircle size={14} className="text-white" />}
+                    <div className="flex items-center gap-4">
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors ${selectedItems.includes(item.id) ? 'border-orange-600 bg-orange-600' : 'border-stone-300 bg-white'}`}>
+                        {selectedItems.includes(item.id) && <CheckCircle size={16} className="text-white" />}
                       </div>
-                      <span className="font-medium">{item.quantity}x {item.productName}</span>
+                      <span className="font-bold text-base">{item.quantity}x {item.productName}</span>
                     </div>
-                    <span className="font-bold">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-bold text-base">R$ {(item.price * item.quantity).toFixed(2)}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="mb-8">
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="font-bold text-zinc-900">Forma de Pagamento</h3>
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-600 cursor-pointer">
+            <div className="mb-10">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-2">
+                <h3 className="text-lg font-bold font-heading text-stone-900">Forma de Pagamento</h3>
+                <label className="flex items-center gap-3 text-sm font-bold text-stone-600 cursor-pointer bg-stone-100 px-4 py-2 rounded-xl border border-stone-200 hover:bg-stone-200 transition-colors">
                   <input 
                     type="checkbox" 
                     checked={autoPrint} 
                     onChange={(e) => setAutoPrint(e.target.checked)}
-                    className="rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                    className="h-5 w-5 rounded border-stone-300 text-orange-600 focus:ring-orange-500"
                   />
                   Imprimir recibo
                 </label>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {['credit', 'debit', 'pix', 'cash'].map(method => (
                   <button
                     key={method}
                     onClick={() => setPaymentMethod(method)}
-                    className={`rounded-xl border p-3 text-sm font-medium capitalize transition-colors ${
-                      paymentMethod === method ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                    className={`rounded-2xl border-2 p-4 text-base font-bold capitalize transition-all duration-200 ${
+                      paymentMethod === method 
+                        ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-sm' 
+                        : 'border-stone-200 text-stone-600 hover:border-orange-300 hover:bg-stone-50'
                     }`}
                   >
                     {method === 'credit' ? 'Crédito' : method === 'debit' ? 'Débito' : method === 'pix' ? 'Pix' : 'Dinheiro'}
@@ -357,25 +363,25 @@ export default function Cashier() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-stone-100">
               <button
                 onClick={() => handlePrint(true)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-zinc-200 py-3 md:py-4 font-bold text-zinc-600 hover:bg-zinc-50"
+                className="flex flex-1 items-center justify-center gap-3 rounded-2xl border-2 border-stone-200 bg-white py-4 font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-all active:scale-95"
               >
-                <Printer size={20} /> Pré-conta
+                <Printer size={22} /> Pré-conta
               </button>
               <button
                 onClick={handleCloseOrder}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-600 py-3 md:py-4 font-bold text-white hover:bg-orange-700"
+                className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-orange-600 py-4 font-bold text-white hover:bg-orange-700 shadow-lg shadow-orange-600/20 transition-all active:scale-95"
               >
-                <CheckCircle size={20} /> {selectedItems.length > 0 && selectedItems.length < orderItems.length ? 'Pagar Selecionados' : 'Finalizar Pagamento'}
+                <CheckCircle size={22} /> {selectedItems.length > 0 && selectedItems.length < orderItems.length ? 'Pagar Selecionados' : 'Finalizar Pagamento'}
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center text-zinc-400">
-            <Calculator size={64} className="mb-4 opacity-20" />
-            <p className="text-xl font-medium text-center">Selecione uma mesa para fechar a conta</p>
+          <div className="flex h-full flex-col items-center justify-center text-stone-400">
+            <Calculator size={80} className="mb-6 opacity-20" />
+            <p className="text-2xl font-bold font-heading text-center text-stone-500">Selecione uma mesa para fechar a conta</p>
           </div>
         )}
       </div>

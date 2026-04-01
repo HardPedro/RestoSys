@@ -45,22 +45,22 @@ export default function WaiterLogin() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 p-6">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-stone-100 p-6 font-sans">
+      <div className="w-full max-w-sm rounded-[2rem] bg-white p-8 shadow-xl border border-stone-200">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100 text-orange-600">
-            <Smartphone size={32} />
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-lg shadow-orange-600/20">
+            <Smartphone size={40} />
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900">Acesso Garçom</h1>
-          <p className="text-sm text-zinc-500">Digite seu PIN para continuar</p>
+          <h1 className="text-3xl font-bold font-heading tracking-tight text-stone-900">Acesso Garçom</h1>
+          <p className="text-stone-500 font-medium mt-2">Digite seu PIN para continuar</p>
         </div>
 
-        <div className="mb-8 flex justify-center gap-3">
+        <div className="mb-10 flex justify-center gap-3">
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className={`h-4 w-4 rounded-full border-2 transition-all ${
-                pin.length > i ? 'border-orange-600 bg-orange-600' : 'border-zinc-200 bg-transparent'
+              className={`h-4 w-4 rounded-full border-2 transition-all duration-300 ${
+                pin.length > i ? 'border-orange-600 bg-orange-600 scale-110' : 'border-stone-200 bg-transparent'
               }`}
             />
           ))}
@@ -71,29 +71,29 @@ export default function WaiterLogin() {
             <button
               key={digit}
               onClick={() => addDigit(digit)}
-              className="flex h-16 items-center justify-center rounded-2xl bg-zinc-100 text-2xl font-bold text-zinc-700 hover:bg-zinc-200 active:scale-95"
+              className="flex h-16 items-center justify-center rounded-2xl bg-stone-50 text-2xl font-bold font-heading text-stone-700 hover:bg-stone-100 hover:shadow-sm border border-stone-100 transition-all active:scale-95"
             >
               {digit}
             </button>
           ))}
           <button
             onClick={removeDigit}
-            className="flex h-16 items-center justify-center rounded-2xl bg-zinc-100 text-lg font-bold text-zinc-500 hover:bg-zinc-200 active:scale-95"
+            className="flex h-16 items-center justify-center rounded-2xl bg-stone-50 text-lg font-bold text-stone-500 hover:bg-stone-100 hover:shadow-sm border border-stone-100 transition-all active:scale-95"
           >
             Limpar
           </button>
           <button
             onClick={() => addDigit('0')}
-            className="flex h-16 items-center justify-center rounded-2xl bg-zinc-100 text-2xl font-bold text-zinc-700 hover:bg-zinc-200 active:scale-95"
+            className="flex h-16 items-center justify-center rounded-2xl bg-stone-50 text-2xl font-bold font-heading text-stone-700 hover:bg-stone-100 hover:shadow-sm border border-stone-100 transition-all active:scale-95"
           >
             0
           </button>
           <button
             onClick={handleLogin}
             disabled={pin.length < 4 || loading}
-            className="flex h-16 items-center justify-center rounded-2xl bg-orange-600 text-white hover:bg-orange-700 active:scale-95 disabled:opacity-50"
+            className="flex h-16 items-center justify-center rounded-2xl bg-orange-600 text-white hover:bg-orange-700 shadow-md shadow-orange-600/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
           >
-            <ArrowRight size={24} />
+            <ArrowRight size={28} />
           </button>
         </div>
       </div>

@@ -168,33 +168,33 @@ export default function Inventory() {
   };
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Estoque</h1>
+        <h1 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-stone-900">Estoque</h1>
         <div className="flex flex-wrap gap-2 md:gap-4">
-          <div className="flex rounded-lg bg-zinc-100 p-1">
+          <div className="flex rounded-xl bg-stone-200/50 p-1 border border-stone-200">
             <button
               onClick={() => setActiveTab('inventory')}
-              className={`rounded-md px-3 md:px-4 py-1.5 text-xs md:text-sm font-medium transition-all ${activeTab === 'inventory' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
+              className={`rounded-lg px-3 md:px-4 py-1.5 text-xs md:text-sm font-bold transition-all ${activeTab === 'inventory' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
             >
               Inventário
             </button>
             <button
               onClick={() => setActiveTab('movements')}
-              className={`rounded-md px-3 md:px-4 py-1.5 text-xs md:text-sm font-medium transition-all ${activeTab === 'movements' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
+              className={`rounded-lg px-3 md:px-4 py-1.5 text-xs md:text-sm font-bold transition-all ${activeTab === 'movements' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
             >
               Movimentação
             </button>
           </div>
           <button
             onClick={() => setIsAdjustmentModalOpen(true)}
-            className="flex items-center gap-2 rounded-lg border-2 border-orange-600 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-orange-600 hover:bg-orange-50"
+            className="flex items-center gap-2 rounded-xl border-2 border-orange-600 px-3 md:px-4 py-2 text-xs md:text-sm font-bold text-orange-600 hover:bg-orange-50 transition-colors active:scale-95"
           >
             Ajustar
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-orange-600 px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white hover:bg-orange-700"
+            className="flex items-center gap-2 rounded-xl bg-orange-600 px-3 md:px-4 py-2 text-xs md:text-sm font-bold text-white hover:bg-orange-700 shadow-md shadow-orange-600/20 transition-all active:scale-95"
           >
             <Plus size={18} className="md:w-5 md:h-5" />
             Novo
@@ -205,17 +205,17 @@ export default function Inventory() {
       {/* ... existing tables ... */}
 
       {isAdjustmentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-xl font-bold">Ajustar Estoque</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-stone-200">
+            <h2 className="mb-6 text-2xl font-bold font-heading text-stone-900">Ajustar Estoque</h2>
             <form onSubmit={handleAdjustment} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">Produto</label>
+                <label className="mb-1.5 block text-sm font-bold text-stone-700">Produto</label>
                 <select 
                   required 
                   value={adjustmentData.productId} 
                   onChange={e => setAdjustmentData({...adjustmentData, productId: e.target.value})}
-                  className="w-full rounded-lg border p-2"
+                  className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
                 >
                   <option value="">Selecione o produto...</option>
                   {products.map(p => (
@@ -225,34 +225,34 @@ export default function Inventory() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Tipo</label>
+                  <label className="mb-1.5 block text-sm font-bold text-stone-700">Tipo</label>
                   <select 
                     value={adjustmentData.type} 
                     onChange={e => setAdjustmentData({...adjustmentData, type: e.target.value as 'in' | 'out'})}
-                    className="w-full rounded-lg border p-2"
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
                   >
                     <option value="in">Entrada (+)</option>
                     <option value="out">Saída (-)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Quantidade</label>
+                  <label className="mb-1.5 block text-sm font-bold text-stone-700">Quantidade</label>
                   <input 
                     required 
                     type="number" 
                     step="0.01" 
                     value={adjustmentData.quantity} 
                     onChange={e => setAdjustmentData({...adjustmentData, quantity: parseFloat(e.target.value)})}
-                    className="w-full rounded-lg border p-2"
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
                   />
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Motivo</label>
+                <label className="mb-1.5 block text-sm font-bold text-stone-700">Motivo</label>
                 <select 
                   value={adjustmentData.reason} 
                   onChange={e => setAdjustmentData({...adjustmentData, reason: e.target.value})}
-                  className="w-full rounded-lg border p-2"
+                  className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
                 >
                   <option value="purchase">Compra / Reposição</option>
                   <option value="adjustment">Ajuste Manual</option>
@@ -260,9 +260,9 @@ export default function Inventory() {
                   <option value="return">Devolução</option>
                 </select>
               </div>
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsAdjustmentModalOpen(false)} className="rounded-lg px-4 py-2 font-medium text-zinc-600 hover:bg-zinc-100">Cancelar</button>
-                <button type="submit" className="rounded-lg bg-orange-600 px-4 py-2 font-medium text-white hover:bg-orange-700">Confirmar</button>
+              <div className="mt-8 flex justify-end gap-3">
+                <button type="button" onClick={() => setIsAdjustmentModalOpen(false)} className="rounded-xl px-5 py-2.5 font-bold text-stone-600 hover:bg-stone-100 transition-colors">Cancelar</button>
+                <button type="submit" className="rounded-xl bg-orange-600 px-5 py-2.5 font-bold text-white hover:bg-orange-700 shadow-md shadow-orange-600/20 transition-all active:scale-95">Confirmar</button>
               </div>
             </form>
           </div>
@@ -272,26 +272,26 @@ export default function Inventory() {
       {activeTab === 'inventory' ? (
         <>
           {/* Desktop Table */}
-          <div className="hidden md:block overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <table className="w-full text-left text-sm text-zinc-600">
-              <thead className="bg-zinc-50 text-xs uppercase text-zinc-700">
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+            <table className="w-full text-left text-sm text-stone-600">
+              <thead className="bg-stone-50 text-xs uppercase tracking-wider text-stone-500 font-bold border-b border-stone-200">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">Nome</th>
-                  <th className="px-6 py-4 font-semibold">Categoria</th>
-                  <th className="px-6 py-4 font-semibold">Preço</th>
-                  <th className="px-6 py-4 font-semibold">Estoque</th>
-                  <th className="px-6 py-4 font-semibold text-right">Ações</th>
+                  <th className="px-6 py-4">Nome</th>
+                  <th className="px-6 py-4">Categoria</th>
+                  <th className="px-6 py-4">Preço</th>
+                  <th className="px-6 py-4">Estoque</th>
+                  <th className="px-6 py-4 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200">
+              <tbody className="divide-y divide-stone-100">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-zinc-50">
-                    <td className="px-6 py-4 font-medium text-zinc-900">{product.name}</td>
+                  <tr key={product.id} className="hover:bg-stone-50/50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-stone-900">{product.name}</td>
                     <td className="px-6 py-4 capitalize">{product.category}</td>
-                    <td className="px-6 py-4">R$ {product.price.toFixed(2)}</td>
+                    <td className="px-6 py-4 font-medium">R$ {product.price.toFixed(2)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <span className={product.stock <= product.minStock ? 'text-red-600 font-bold' : ''}>
+                        <span className={`font-bold ${product.stock <= product.minStock ? 'text-red-600' : 'text-stone-900'}`}>
                           {product.stock} {product.unit}
                         </span>
                         {product.stock <= product.minStock && (
@@ -316,25 +316,25 @@ export default function Inventory() {
           {/* Mobile Cards */}
           <div className="grid gap-4 md:hidden">
             {products.map((product) => (
-              <div key={product.id} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-                <div className="mb-2 flex items-start justify-between">
+              <div key={product.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-start justify-between">
                   <div>
-                    <h3 className="font-bold text-zinc-900">{product.name}</h3>
-                    <p className="text-xs capitalize text-zinc-500">{product.category}</p>
+                    <h3 className="font-bold text-stone-900 text-base">{product.name}</h3>
+                    <p className="text-xs font-bold uppercase tracking-wider text-stone-500 mt-1">{product.category}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleEdit(product)} className="rounded-lg p-2 text-blue-600 hover:bg-blue-50">
+                    <button onClick={() => handleEdit(product)} className="rounded-xl p-2 text-blue-600 hover:bg-blue-50 transition-colors active:scale-95">
                       <Edit size={18} />
                     </button>
-                    <button onClick={() => handleDelete(product.id)} className="rounded-lg p-2 text-red-600 hover:bg-red-50">
+                    <button onClick={() => handleDelete(product.id)} className="rounded-xl p-2 text-red-600 hover:bg-red-50 transition-colors active:scale-95">
                       <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-zinc-600">R$ {product.price.toFixed(2)}</span>
-                  <div className="flex items-center gap-1">
-                    <span className={`font-bold ${product.stock <= product.minStock ? 'text-red-600' : 'text-zinc-900'}`}>
+                <div className="flex items-center justify-between text-sm border-t border-stone-50 pt-3">
+                  <span className="font-bold text-stone-900">R$ {product.price.toFixed(2)}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`font-bold ${product.stock <= product.minStock ? 'text-red-600' : 'text-stone-900'}`}>
                       {product.stock} {product.unit}
                     </span>
                     {product.stock <= product.minStock && (
@@ -349,29 +349,29 @@ export default function Inventory() {
       ) : (
         <>
           {/* Desktop Table Movements */}
-          <div className="hidden md:block overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <table className="w-full text-left text-sm text-zinc-600">
-              <thead className="bg-zinc-50 text-xs uppercase text-zinc-700">
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+            <table className="w-full text-left text-sm text-stone-600">
+              <thead className="bg-stone-50 text-xs uppercase tracking-wider text-stone-500 font-bold border-b border-stone-200">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">Data</th>
-                  <th className="px-6 py-4 font-semibold">Produto</th>
-                  <th className="px-6 py-4 font-semibold">Tipo</th>
-                  <th className="px-6 py-4 font-semibold">Qtd</th>
-                  <th className="px-6 py-4 font-semibold">Motivo</th>
+                  <th className="px-6 py-4">Data</th>
+                  <th className="px-6 py-4">Produto</th>
+                  <th className="px-6 py-4">Tipo</th>
+                  <th className="px-6 py-4">Qtd</th>
+                  <th className="px-6 py-4">Motivo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200">
+              <tbody className="divide-y divide-stone-100">
                 {movements.map((m) => (
-                  <tr key={m.id} className="hover:bg-zinc-50">
-                    <td className="px-6 py-4">{new Date(m.date).toLocaleString('pt-BR')}</td>
-                    <td className="px-6 py-4 font-medium text-zinc-900">{m.productName}</td>
+                  <tr key={m.id} className="hover:bg-stone-50/50 transition-colors">
+                    <td className="px-6 py-4 font-medium">{new Date(m.date).toLocaleString('pt-BR')}</td>
+                    <td className="px-6 py-4 font-bold text-stone-900">{m.productName}</td>
                     <td className="px-6 py-4">
-                      <span className={`rounded-full px-2 py-1 text-xs font-medium ${m.type === 'in' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      <span className={`rounded-lg px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${m.type === 'in' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {m.type === 'in' ? 'Entrada' : 'Saída'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-bold">{m.quantity}</td>
-                    <td className="px-6 py-4 capitalize">{m.reason === 'sale' ? 'Venda' : m.reason}</td>
+                    <td className="px-6 py-4 font-bold text-stone-900">{m.quantity}</td>
+                    <td className="px-6 py-4 capitalize font-medium">{m.reason === 'sale' ? 'Venda' : m.reason}</td>
                   </tr>
                 ))}
               </tbody>
@@ -381,17 +381,17 @@ export default function Inventory() {
           {/* Mobile Cards Movements */}
           <div className="grid gap-4 md:hidden">
             {movements.map((m) => (
-              <div key={m.id} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs text-zinc-500">{new Date(m.date).toLocaleString('pt-BR')}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${m.type === 'in' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              <div key={m.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs font-medium text-stone-500">{new Date(m.date).toLocaleString('pt-BR')}</span>
+                  <span className={`rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.type === 'in' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {m.type === 'in' ? 'Entrada' : 'Saída'}
                   </span>
                 </div>
-                <h3 className="font-bold text-zinc-900">{m.productName}</h3>
-                <div className="mt-2 flex items-center justify-between text-sm">
-                  <span className="capitalize text-zinc-500">{m.reason === 'sale' ? 'Venda' : m.reason}</span>
-                  <span className="font-bold text-zinc-900">{m.quantity}</span>
+                <h3 className="font-bold text-stone-900 text-base">{m.productName}</h3>
+                <div className="mt-3 pt-3 border-t border-stone-50 flex items-center justify-between text-sm">
+                  <span className="capitalize font-medium text-stone-500">{m.reason === 'sale' ? 'Venda' : m.reason}</span>
+                  <span className="font-bold text-stone-900">{m.quantity}</span>
                 </div>
               </div>
             ))}
@@ -400,26 +400,26 @@ export default function Inventory() {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-xl font-bold">{editingId ? 'Editar Produto' : 'Novo Produto'}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-stone-200 my-8">
+            <h2 className="mb-6 text-2xl font-bold font-heading text-stone-900">{editingId ? 'Editar Produto' : 'Novo Produto'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">Nome</label>
-                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full rounded-lg border p-2" />
+                <label className="mb-1.5 block text-sm font-bold text-stone-700">Nome</label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Categoria</label>
-                  <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full rounded-lg border p-2">
+                  <label className="mb-1.5 block text-sm font-bold text-stone-700">Categoria</label>
+                  <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all">
                     <option value="food">Comida</option>
                     <option value="drink">Bebida</option>
                     <option value="ingredient">Ingrediente</option>
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Unidade</label>
-                  <select value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className="w-full rounded-lg border p-2">
+                  <label className="mb-1.5 block text-sm font-bold text-stone-700">Unidade</label>
+                  <select value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all">
                     <option value="un">Unidade</option>
                     <option value="kg">Kg</option>
                     <option value="l">Litro</option>
@@ -430,43 +430,43 @@ export default function Inventory() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Custo (R$)</label>
-                  <input type="number" step="0.01" value={formData.cost} onChange={e => setFormData({...formData, cost: parseFloat(e.target.value)})} className="w-full rounded-lg border p-2" />
+                  <label className="mb-1.5 block text-sm font-bold text-stone-700">Custo (R$)</label>
+                  <input type="number" step="0.01" value={formData.cost} onChange={e => setFormData({...formData, cost: parseFloat(e.target.value)})} className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Preço (R$)</label>
-                  <input type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: parseFloat(e.target.value)})} className="w-full rounded-lg border p-2" />
+                  <label className="mb-1.5 block text-sm font-bold text-stone-700">Preço (R$)</label>
+                  <input type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: parseFloat(e.target.value)})} className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Estoque</label>
-                  <input type="number" value={formData.stock} onChange={e => setFormData({...formData, stock: parseFloat(e.target.value)})} className="w-full rounded-lg border p-2" />
+                  <label className="mb-1.5 block text-sm font-bold text-stone-700">Estoque</label>
+                  <input type="number" value={formData.stock} onChange={e => setFormData({...formData, stock: parseFloat(e.target.value)})} className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Estoque Mínimo</label>
-                  <input type="number" value={formData.minStock} onChange={e => setFormData({...formData, minStock: parseFloat(e.target.value)})} className="w-full rounded-lg border p-2" />
+                  <label className="mb-1.5 block text-sm font-bold text-stone-700">Estoque Mínimo</label>
+                  <input type="number" value={formData.minStock} onChange={e => setFormData({...formData, minStock: parseFloat(e.target.value)})} className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-stone-900 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20 outline-none transition-all" />
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <input type="checkbox" id="isComposite" checked={formData.isComposite} onChange={e => setFormData({...formData, isComposite: e.target.checked})} />
-                <label htmlFor="isComposite" className="text-sm font-medium">Produto Composto (Ficha Técnica)</label>
+                <input type="checkbox" id="isComposite" checked={formData.isComposite} onChange={e => setFormData({...formData, isComposite: e.target.checked})} className="rounded text-orange-600 focus:ring-orange-500" />
+                <label htmlFor="isComposite" className="text-sm font-bold text-stone-700">Produto Composto (Ficha Técnica)</label>
               </div>
 
               {formData.isComposite && (
-                <div className="rounded-xl border border-zinc-200 p-4">
-                  <h3 className="mb-3 text-sm font-bold">Composição (Ficha Técnica)</h3>
+                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                  <h3 className="mb-3 text-sm font-bold text-stone-900">Composição (Ficha Técnica)</h3>
                   <div className="mb-3 space-y-2">
                     {recipeIngredients.map(ing => (
-                      <div key={ing.ingredientId} className="flex items-center justify-between text-sm">
-                        <span>{ing.name} ({ing.quantity}{ing.unit})</span>
-                        <button type="button" onClick={() => removeIngredientFromRecipe(ing.ingredientId)} className="text-red-500">Remover</button>
+                      <div key={ing.ingredientId} className="flex items-center justify-between text-sm bg-white p-2 rounded-lg border border-stone-100">
+                        <span className="font-medium text-stone-900">{ing.name} <span className="text-stone-500">({ing.quantity}{ing.unit})</span></span>
+                        <button type="button" onClick={() => removeIngredientFromRecipe(ing.ingredientId)} className="text-red-500 hover:text-red-700 font-medium transition-colors">Remover</button>
                       </div>
                     ))}
                   </div>
                   <div className="flex gap-2">
                     <select 
-                      className="flex-1 rounded-lg border p-2 text-sm"
+                      className="flex-1 rounded-xl border border-stone-200 bg-white p-2.5 text-sm text-stone-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
                       onChange={(e) => {
                         const val = e.target.value;
                         if (val) addIngredientToRecipe(val, 1);
@@ -482,9 +482,9 @@ export default function Inventory() {
                 </div>
               )}
 
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg px-4 py-2 font-medium text-zinc-600 hover:bg-zinc-100">Cancelar</button>
-                <button type="submit" className="rounded-lg bg-orange-600 px-4 py-2 font-medium text-white hover:bg-orange-700">Salvar</button>
+              <div className="mt-8 flex justify-end gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-xl px-5 py-2.5 font-bold text-stone-600 hover:bg-stone-100 transition-colors">Cancelar</button>
+                <button type="submit" className="rounded-xl bg-orange-600 px-5 py-2.5 font-bold text-white hover:bg-orange-700 shadow-md shadow-orange-600/20 transition-all active:scale-95">Salvar</button>
               </div>
             </form>
           </div>

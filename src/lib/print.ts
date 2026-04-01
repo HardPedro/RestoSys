@@ -16,7 +16,7 @@ export interface PrintRequest {
 
 export const printOrderWithFallback = async (request: PrintRequest, htmlContent: string) => {
   try {
-    const res = await fetch('http://localhost:17321/print', {
+    const res = await fetch(`http://localhost:17321/print`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request)

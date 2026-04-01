@@ -79,12 +79,13 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`================================================`);
   console.log(` AGENTE DE IMPRESSAO LOCAL INICIADO NA PORTA ${PORT}`);
   console.log(`================================================`);
   console.log(` Mantenha esta janela aberta para imprimir.`);
   console.log(` O sistema web se conectara automaticamente.`);
+  console.log(` Para dispositivos móveis, use o IP deste computador.`);
 });
 
 function processPrintRequest(req) {
