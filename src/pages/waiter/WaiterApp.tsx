@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, getDocs, runTransaction } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Plus, Minus, ShoppingBag, ArrowLeft, CheckCircle, Clock, Utensils, Wine, LogOut } from 'lucide-react';
+import { Plus, Minus, ShoppingBag, ArrowLeft, CheckCircle, Clock, Utensils, Wine, LogOut, Printer } from 'lucide-react';
+import { printReceipt } from '../../lib/print';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -75,7 +76,7 @@ export default function WaiterApp() {
 
   // Create tables if none exist (just for demo/setup)
   const setupTables = async () => {
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 0; i <= 10; i++) {
       await addDoc(collection(db, 'tables'), { number: i, status: 'free' });
     }
     toast.success('Mesas geradas!');
@@ -87,6 +88,10 @@ export default function WaiterApp() {
   };
 
   const addToCart = (product: any) => {
+    if (currentTable?.status === 'billing') {
+      toast.error('Mesa em fechamento. Não é possível adicionar itens.');
+      return;
+    }
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id);
       if (existing) {
@@ -98,6 +103,7 @@ export default function WaiterApp() {
   };
 
   const updateCartQuantity = (productId: string, delta: number) => {
+    if (currentTable?.status === 'billing') return;
     setCart(prev => prev.map(item => {
       if (item.product.id === productId) {
         const newQ = item.quantity + delta;
@@ -109,6 +115,10 @@ export default function WaiterApp() {
 
   const sendOrder = async () => {
     if (cart.length === 0 || !currentTable || !userData) return;
+    if (currentTable.status === 'billing') {
+      toast.error('Mesa em fechamento. Não é possível lançar pedidos.');
+      return;
+    }
     try {
       // Pre-fetch recipes for composite products outside the transaction
       const compositeItems = cart.filter(item => item.product.isComposite);
@@ -128,6 +138,11 @@ export default function WaiterApp() {
         if (!tableSnap.exists()) throw new Error("Mesa não encontrada");
         
         const tableData = tableSnap.data();
+        
+        if (tableData.status === 'billing') {
+          throw new Error("Mesa em fechamento. Não é possível lançar pedidos.");
+        }
+
         let orderId = tableData.currentOrderId;
 
         let orderSnap = null;
@@ -167,6 +182,7 @@ export default function WaiterApp() {
           finalOrderId = newOrderRef.id;
           transaction.set(newOrderRef, {
             tableId: currentTable.id,
+            tableNumber: currentTable.number,
             waiterId: userData.uid || userData.id,
             waiterName: userData.name,
             status: 'open',
@@ -263,6 +279,42 @@ export default function WaiterApp() {
     }
   };
 
+  const handlePrint = () => {
+    if (!currentOrder || !currentTable) return;
+    
+    const itemsHtml = orderItems.map(item => `
+      <div class="flex mb-2">
+        <span>${item.quantity}x ${item.productName}</span>
+        <span>R$ ${(item.price * item.quantity).toFixed(2)}</span>
+      </div>
+    `).join('');
+
+    const content = `
+      <div class="text-center border-b">
+        <h2>RESTAURANTE EXPRESS</h2>
+        <p>Conferência de Mesa</p>
+        <p>${new Date().toLocaleString('pt-BR')}</p>
+      </div>
+      <div class="border-b">
+        <p class="bold text-lg">${currentTable.number === 0 ? 'BAR' : `MESA ${currentTable.number}`}</p>
+        <p>Pedido #${currentOrder.id.slice(0, 8)}</p>
+      </div>
+      <div class="border-b">
+        ${itemsHtml}
+      </div>
+      <div class="flex border-b text-lg bold">
+        <span>TOTAL PARCIAL</span>
+        <span>R$ ${currentOrder.total.toFixed(2)}</span>
+      </div>
+      <div class="text-center">
+        <p>Solicite o fechamento no caixa</p>
+        <p>Obrigado pela preferência!</p>
+      </div>
+    `;
+    printReceipt(content);
+    toast.success('Imprimindo conferência...');
+  };
+
   const requestCheckout = async () => {
     if (!currentTable || !currentTable.currentOrderId) return;
     try {
@@ -302,12 +354,12 @@ export default function WaiterApp() {
               className={`flex aspect-square flex-col items-center justify-center rounded-2xl border-2 p-4 transition-all ${
                 table.status === 'free' ? 'border-zinc-200 bg-white text-zinc-600 hover:border-orange-500' :
                 table.status === 'occupied' ? 'border-orange-500 bg-orange-50 text-orange-700' :
-                'border-blue-500 bg-blue-50 text-blue-700'
+                'border-red-500 bg-red-50 text-red-700'
               }`}
             >
-              <span className="text-3xl font-bold">{table.number}</span>
+              <span className="text-3xl font-bold">{table.number === 0 ? 'BAR' : table.number}</span>
               <span className="mt-2 text-xs font-medium uppercase tracking-wider">
-                {table.status === 'free' ? 'Livre' : table.status === 'occupied' ? 'Ocupada' : 'Fechando'}
+                {table.status === 'free' ? 'Livre' : table.status === 'occupied' ? 'Ocupada' : 'Fechada'}
               </span>
             </button>
           ))}
@@ -371,19 +423,30 @@ export default function WaiterApp() {
               <span className="text-xl font-bold text-zinc-900">R$ {currentOrder.total.toFixed(2)}</span>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => setView('menu')}
-              className="flex items-center justify-center gap-2 rounded-xl bg-orange-600 py-3 font-medium text-white hover:bg-orange-700"
+              disabled={currentTable?.status === 'billing'}
+              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-orange-600 py-3 font-medium text-white hover:bg-orange-700 disabled:opacity-50"
             >
-              <Plus size={20} /> Adicionar
+              <Plus size={20} />
+              <span className="text-xs">Adicionar</span>
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={!currentOrder}
+              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-zinc-100 py-3 font-medium text-zinc-600 hover:bg-zinc-200 disabled:opacity-50"
+            >
+              <Printer size={20} />
+              <span className="text-xs">Imprimir</span>
             </button>
             <button
               onClick={requestCheckout}
               disabled={!currentOrder || currentTable?.status === 'billing'}
-              className="flex items-center justify-center gap-2 rounded-xl bg-zinc-900 py-3 font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-zinc-900 py-3 font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
             >
-              <CheckCircle size={20} /> Fechar Conta
+              <CheckCircle size={20} />
+              <span className="text-xs">Fechar</span>
             </button>
           </div>
         </div>

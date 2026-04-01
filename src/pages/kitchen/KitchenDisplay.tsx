@@ -73,7 +73,7 @@ export default function KitchenDisplay() {
               <div key={item.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                 <div className="mb-2 flex items-start justify-between">
                   <div>
-                    <span className="text-sm font-bold text-zinc-500">Mesa {item.tableNumber || '?'}</span>
+                    <span className="text-sm font-bold text-zinc-500">{item.tableNumber === 0 ? 'BAR' : `Mesa ${item.tableNumber || '?'}`}</span>
                     <p className="text-lg font-bold text-zinc-900">{item.quantity}x {item.productName}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -108,7 +108,7 @@ export default function KitchenDisplay() {
               <div key={item.id} className="rounded-xl border border-blue-200 bg-blue-50 p-4">
                 <div className="mb-2 flex items-start justify-between">
                   <div>
-                    <span className="text-sm font-bold text-blue-500">Mesa {item.tableNumber || '?'}</span>
+                    <span className="text-sm font-bold text-blue-500">{item.tableNumber === 0 ? 'BAR' : `Mesa ${item.tableNumber || '?'}`}</span>
                     <p className="text-lg font-bold text-zinc-900">{item.quantity}x {item.productName}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">

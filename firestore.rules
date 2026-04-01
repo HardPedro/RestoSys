@@ -70,15 +70,36 @@ service cloud.firestore {
     }
 
     match /tables/{tableId} {
-      allow read, write: if true; // Waiters need to read and update tables
+      allow read: if true;
+      allow update: if 
+        isAdmin() || isCashier() || (
+          // Waiters can only change free -> occupied or occupied -> billing
+          (resource.data.status == 'free' && request.resource.data.status == 'occupied') ||
+          (resource.data.status == 'occupied' && request.resource.data.status == 'billing')
+        );
+      allow create, delete: if isAdmin();
     }
 
     match /orders/{orderId} {
-      allow read, write: if true; // Waiters need to create and update orders
+      allow read: if true;
+      allow create: if true;
+      allow update: if 
+        isAdmin() || isCashier() || (
+          // Waiters can only update open orders
+          resource.data.status == 'open' && request.resource.data.status == 'open'
+        );
+      allow delete: if isAdmin();
     }
 
     match /orderItems/{itemId} {
-      allow read, write: if true; // Waiters need to create and update order items
+      allow read: if true;
+      allow create: if true;
+      allow update: if 
+        isAdmin() || isCashier() || isKitchen() || isBar() || (
+          // Waiters can only update pending items
+          resource.data.status == 'pending'
+        );
+      allow delete: if isAdmin() || isCashier();
     }
 
     match /transactions/{transactionId} {

@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               uid: firebaseUser.uid,
               name: firebaseUser.displayName || 'User',
               email: firebaseUser.email || '',
-              role: isFirstUser ? 'admin' : 'waiter',
+              role: isFirstUser ? 'admin' : 'manager', // Default new Google users to manager for now, or admin can change later
               createdAt: new Date().toISOString(),
             };
             await setDoc(doc(db, 'users', firebaseUser.uid), newUserData);
@@ -53,12 +53,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } catch (error) {
           console.error("Error fetching/creating user data:", error);
-          // If creation fails due to rules, we might just set them as waiter locally or sign out
+          // If creation fails due to rules, we might just set them as manager locally or sign out
           setUserData({
             uid: firebaseUser.uid,
             name: firebaseUser.displayName || 'User',
             email: firebaseUser.email || '',
-            role: 'waiter',
+            role: 'manager',
             createdAt: new Date().toISOString(),
           });
         }

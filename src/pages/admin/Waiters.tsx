@@ -16,8 +16,8 @@ export default function Waiters() {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'users'), where('role', '==', 'waiter'));
-    const unsub = onSnapshot(q, (snapshot) => {
+    // Fetch all users to manage them
+    const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
       setWaiters(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
     return () => unsub();
@@ -28,49 +28,51 @@ export default function Waiters() {
     try {
       if (editingId) {
         await updateDoc(doc(db, 'users', editingId), formData);
-        toast.success('Garçom atualizado!');
+        toast.success('Usuário atualizado!');
       } else {
-        // For simplicity, we create a user record directly in Firestore.
-        // In a real app, we'd use Firebase Auth to create the user.
-        // But the user asked for "waiter entities" and "passwords" (PINs).
         await addDoc(collection(db, 'users'), {
           ...formData,
-          uid: `waiter_${Date.now()}`, // Temporary UID for custom login
+          uid: `waiter_${Date.now()}`,
           createdAt: new Date().toISOString()
         });
-        toast.success('Garçom criado!');
+        toast.success('Usuário criado!');
       }
       setIsModalOpen(false);
       setEditingId(null);
       setFormData({ name: '', email: '', pin: '', role: 'waiter' });
     } catch (error) {
-      toast.error('Erro ao salvar garçom');
+      toast.error('Erro ao salvar usuário');
     }
   };
 
   const handleEdit = (waiter: any) => {
-    setFormData(waiter);
+    setFormData({
+      name: waiter.name || '',
+      email: waiter.email || '',
+      pin: waiter.pin || '',
+      role: waiter.role || 'waiter'
+    });
     setEditingId(waiter.id);
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este garçom?')) {
+    if (confirm('Tem certeza que deseja excluir este usuário?')) {
       await deleteDoc(doc(db, 'users', id));
-      toast.success('Garçom excluído');
+      toast.success('Usuário excluído');
     }
   };
 
   return (
     <div className="p-4 md:p-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Garçons</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Gerenciar Usuários</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-medium text-white hover:bg-orange-700"
         >
           <Plus size={20} />
-          Novo Garçom
+          Novo Usuário
         </button>
       </div>
 
@@ -92,9 +94,10 @@ export default function Waiters() {
             </div>
             <h3 className="text-lg font-bold text-zinc-900">{waiter.name}</h3>
             <p className="text-sm text-zinc-500 truncate">{waiter.email}</p>
+            <div className="mt-2 text-xs font-bold uppercase text-orange-600">{waiter.role}</div>
             <div className="mt-4 flex items-center gap-2 rounded-lg bg-zinc-50 p-2 text-sm font-medium text-zinc-700">
               <Key size={16} className="text-zinc-400" />
-              PIN: {waiter.pin}
+              PIN: {waiter.pin || 'N/A'}
             </div>
           </div>
         ))}
@@ -103,7 +106,7 @@ export default function Waiters() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-xl font-bold">{editingId ? 'Editar Garçom' : 'Novo Garçom'}</h2>
+            <h2 className="mb-4 text-xl font-bold">{editingId ? 'Editar Usuário' : 'Novo Usuário'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="mb-1 block text-sm font-medium">Nome Completo</label>
@@ -114,8 +117,19 @@ export default function Waiters() {
                 <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full rounded-lg border p-2" />
               </div>
               <div>
+                <label className="mb-1 block text-sm font-medium">Cargo / Função</label>
+                <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as any})} className="w-full rounded-lg border p-2">
+                  <option value="admin">Administrador</option>
+                  <option value="manager">Gerente</option>
+                  <option value="waiter">Garçom</option>
+                  <option value="cashier">Caixa</option>
+                  <option value="kitchen">Cozinha</option>
+                  <option value="bar">Bar</option>
+                </select>
+              </div>
+              <div>
                 <label className="mb-1 block text-sm font-medium">PIN de Acesso (4-6 dígitos)</label>
-                <input required type="text" maxLength={6} value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} className="w-full rounded-lg border p-2 text-center text-2xl font-bold tracking-widest" />
+                <input type="text" maxLength={6} value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} className="w-full rounded-lg border p-2 text-center text-2xl font-bold tracking-widest" />
               </div>
               <div className="mt-6 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg px-4 py-2 font-medium text-zinc-600 hover:bg-zinc-100">Cancelar</button>

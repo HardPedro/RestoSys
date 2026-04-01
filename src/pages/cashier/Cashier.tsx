@@ -13,6 +13,8 @@ export default function Cashier() {
   const [paymentMethod, setPaymentMethod] = useState('credit');
   const [autoPrint, setAutoPrint] = useState(true);
 
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
   useEffect(() => {
     const unsubTables = onSnapshot(collection(db, 'tables'), (snapshot) => {
       setTables(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).sort((a: any, b: any) => a.number - b.number));
@@ -39,13 +41,24 @@ export default function Cashier() {
     } else {
       setCurrentOrder(null);
       setOrderItems([]);
+      setSelectedItems([]);
     }
   }, [currentOrderId]);
 
-  const handlePrint = (isPreBill = false) => {
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItems(prev => 
+      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+    );
+  };
+
+  const selectedTotal = orderItems
+    .filter(item => selectedItems.includes(item.id))
+    .reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+  const handlePrint = (isPreBill = false, itemsToPrint = orderItems) => {
     if (!currentOrder || !currentTable) return;
     
-    const itemsHtml = orderItems.map(item => `
+    const itemsHtml = itemsToPrint.map(item => `
       <div class="flex mb-2">
         <span>${item.quantity}x ${item.productName}</span>
         <span>R$ ${(item.price * item.quantity).toFixed(2)}</span>
@@ -59,6 +72,8 @@ export default function Cashier() {
       cash: 'Dinheiro'
     };
 
+    const total = itemsToPrint.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
     const content = `
       <div class="text-center border-b">
         <h2>RESTAURANTE EXPRESS</h2>
@@ -66,7 +81,7 @@ export default function Cashier() {
         <p>${new Date().toLocaleString('pt-BR')}</p>
       </div>
       <div class="border-b">
-        <p class="bold text-lg">MESA ${currentTable.number}</p>
+        <p class="bold text-lg">${currentTable.number === 0 ? 'BAR' : `MESA ${currentTable.number}`}</p>
         <p>Pedido #${currentOrder.id.slice(0, 8)}</p>
       </div>
       <div class="border-b">
@@ -74,7 +89,7 @@ export default function Cashier() {
       </div>
       <div class="flex border-b text-lg bold">
         <span>TOTAL</span>
-        <span>R$ ${currentOrder.total.toFixed(2)}</span>
+        <span>R$ ${total.toFixed(2)}</span>
       </div>
       <div class="text-center">
         ${!isPreBill ? `<p>Pagamento: ${paymentMethodNames[paymentMethod] || paymentMethod}</p>` : '<p>Aguardando Pagamento</p>'}
@@ -88,16 +103,28 @@ export default function Cashier() {
   const handleCloseOrder = async () => {
     if (!currentTable || !currentOrder) return;
     
+    const itemsToPay = selectedItems.length > 0 
+      ? orderItems.filter(item => selectedItems.includes(item.id))
+      : orderItems;
+
+    if (itemsToPay.length === 0) {
+      toast.error('Selecione itens para pagar');
+      return;
+    }
+
+    const totalToPay = itemsToPay.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const isPartial = itemsToPay.length < orderItems.length;
+
     try {
       if (autoPrint) {
-        handlePrint(false);
+        handlePrint(false, itemsToPay);
       }
 
       // 1. Create Transaction
       await addDoc(collection(db, 'transactions'), {
         type: 'receivable',
-        amount: currentOrder.total,
-        description: `Venda Mesa ${currentTable.number}`,
+        amount: totalToPay,
+        description: `Venda ${currentTable.number === 0 ? 'Bar' : `Mesa ${currentTable.number}`}${isPartial ? ' (Parcial)' : ''}`,
         status: 'paid',
         dueDate: new Date().toISOString(),
         paidDate: new Date().toISOString(),
@@ -107,22 +134,75 @@ export default function Cashier() {
         createdAt: new Date().toISOString()
       });
 
-      // 2. Close Order
-      await updateDoc(doc(db, 'orders', currentOrder.id), {
-        status: 'closed',
-        closedAt: new Date().toISOString()
-      });
+      // 2. Handle Items
+      for (const item of itemsToPay) {
+        await updateDoc(doc(db, 'orderItems', item.id), {
+          status: 'paid',
+          paidAt: new Date().toISOString()
+        });
+      }
 
-      // 3. Free Table
-      await updateDoc(doc(db, 'tables', currentTable.id), {
-        status: 'free',
-        currentOrderId: null
-      });
+      // 3. Update Order Total and Status
+      const remainingItems = orderItems.filter(item => !selectedItems.includes(item.id) && item.status !== 'paid');
+      
+      if (remainingItems.length === 0) {
+        // Full checkout
+        await updateDoc(doc(db, 'orders', currentOrder.id), {
+          status: 'closed',
+          closedAt: new Date().toISOString()
+        });
 
-      toast.success('Conta fechada com sucesso!');
-      setSelectedTable(null);
+        await updateDoc(doc(db, 'tables', currentTable.id), {
+          status: 'free',
+          currentOrderId: null
+        });
+        toast.success('Mesa finalizada com sucesso!');
+        setSelectedTable(null);
+      } else {
+        // Partial checkout
+        const newTotal = remainingItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        await updateDoc(doc(db, 'orders', currentOrder.id), {
+          total: newTotal
+        });
+        toast.success('Pagamento parcial registrado!');
+        setSelectedItems([]);
+      }
+
     } catch (error) {
-      toast.error('Erro ao fechar conta');
+      console.error(error);
+      toast.error('Erro ao processar pagamento');
+    }
+  };
+
+  const handleReopenTable = async () => {
+    if (!currentTable) return;
+    try {
+      await updateDoc(doc(db, 'tables', currentTable.id), {
+        status: 'occupied'
+      });
+      toast.success('Mesa reaberta para novos pedidos');
+    } catch (error) {
+      toast.error('Erro ao reabrir mesa');
+    }
+  };
+
+  const handleFreeTable = async () => {
+    if (!currentTable || !currentOrder) return;
+    if (confirm('Deseja realmente liberar a mesa sem pagamento? (Os itens serão mantidos no pedido como não pagos)')) {
+      try {
+        await updateDoc(doc(db, 'tables', currentTable.id), {
+          status: 'free',
+          currentOrderId: null
+        });
+        await updateDoc(doc(db, 'orders', currentOrder.id), {
+          status: 'cancelled',
+          cancelledAt: new Date().toISOString()
+        });
+        toast.success('Mesa liberada');
+        setSelectedTable(null);
+      } catch (error) {
+        toast.error('Erro ao liberar mesa');
+      }
     }
   };
 
@@ -144,12 +224,12 @@ export default function Cashier() {
                 <div className={`flex h-10 w-10 items-center justify-center rounded-full font-bold ${
                   table.status === 'billing' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
                 }`}>
-                  {table.number}
+                  {table.number === 0 ? 'B' : table.number}
                 </div>
-                <span className="font-medium text-zinc-900">Mesa {table.number}</span>
+                <span className="font-medium text-zinc-900">{table.number === 0 ? 'Mesa do Bar' : `Mesa ${table.number}`}</span>
               </div>
               {table.status === 'billing' && (
-                <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-600">Fechando</span>
+                <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-600">Fechada</span>
               )}
             </button>
           ))}
@@ -166,30 +246,68 @@ export default function Cashier() {
       <div className={`${!selectedTable ? 'hidden md:flex' : 'flex'} flex-1 flex-col p-4 md:p-8 overflow-y-auto`}>
         {currentTable && currentOrder ? (
           <div className="mx-auto w-full max-w-2xl rounded-2xl bg-white p-4 md:p-8 shadow-sm">
-            <div className="mb-6 md:hidden">
-              <button onClick={() => setSelectedTable(null)} className="text-zinc-600 font-medium">
-                ← Voltar para mesas
+            <div className="mb-6 flex items-center justify-between">
+              <button onClick={() => setSelectedTable(null)} className="text-zinc-600 font-medium md:hidden">
+                ← Voltar
               </button>
+              <div className="flex gap-2">
+                {currentTable.status === 'billing' && (
+                  <button 
+                    onClick={handleReopenTable}
+                    className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-bold text-blue-600 hover:bg-blue-200"
+                  >
+                    Reabrir Mesa
+                  </button>
+                )}
+                <button 
+                  onClick={handleFreeTable}
+                  className="rounded-lg bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 hover:bg-zinc-200"
+                >
+                  Liberar Mesa
+                </button>
+              </div>
             </div>
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-6">
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-zinc-900">Mesa {currentTable.number}</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-zinc-900">{currentTable.number === 0 ? 'Mesa do Bar' : `Mesa ${currentTable.number}`}</h2>
                 <p className="text-sm text-zinc-500">Pedido #{currentOrder.id.slice(0, 8)}</p>
               </div>
               <div className="sm:text-right">
-                <p className="text-xs md:text-sm font-medium text-zinc-500">Total a Pagar</p>
-                <p className="text-3xl md:text-4xl font-bold text-orange-600">R$ {currentOrder.total.toFixed(2)}</p>
+                <p className="text-xs md:text-sm font-medium text-zinc-500">Total {selectedItems.length > 0 ? 'Selecionado' : 'da Mesa'}</p>
+                <p className="text-3xl md:text-4xl font-bold text-orange-600">R$ {(selectedItems.length > 0 ? selectedTotal : currentOrder.total).toFixed(2)}</p>
+                {selectedItems.length > 0 && (
+                  <p className="text-xs text-zinc-400">Total Mesa: R$ {currentOrder.total.toFixed(2)}</p>
+                )}
               </div>
             </div>
 
             <div className="mb-8 space-y-4">
-              <h3 className="font-bold text-zinc-900">Itens Consumidos</h3>
-              <div className="max-h-64 overflow-y-auto rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-zinc-900">Itens Consumidos</h3>
+                <button 
+                  onClick={() => setSelectedItems(selectedItems.length === orderItems.length ? [] : orderItems.map(i => i.id))}
+                  className="text-xs font-medium text-orange-600 hover:underline"
+                >
+                  {selectedItems.length === orderItems.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                </button>
+              </div>
+              <div className="max-h-64 overflow-y-auto rounded-xl border border-zinc-100 bg-zinc-50 p-2">
                 {orderItems.map(item => (
-                  <div key={item.id} className="mb-2 flex justify-between text-sm">
-                    <span className="font-medium text-zinc-700">{item.quantity}x {item.productName}</span>
-                    <span className="font-medium text-zinc-900">R$ {(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
+                  <button
+                    key={item.id}
+                    onClick={() => toggleItemSelection(item.id)}
+                    className={`mb-1 flex w-full items-center justify-between rounded-lg p-3 text-sm transition-colors ${
+                      selectedItems.includes(item.id) ? 'bg-orange-100 text-orange-900' : 'hover:bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`h-4 w-4 rounded border ${selectedItems.includes(item.id) ? 'border-orange-600 bg-orange-600' : 'border-zinc-300 bg-white'}`}>
+                        {selectedItems.includes(item.id) && <CheckCircle size={14} className="text-white" />}
+                      </div>
+                      <span className="font-medium">{item.quantity}x {item.productName}</span>
+                    </div>
+                    <span className="font-bold">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -204,7 +322,7 @@ export default function Cashier() {
                     onChange={(e) => setAutoPrint(e.target.checked)}
                     className="rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
                   />
-                  Imprimir recibo ao fechar
+                  Imprimir recibo
                 </label>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -233,7 +351,7 @@ export default function Cashier() {
                 onClick={handleCloseOrder}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-600 py-3 md:py-4 font-bold text-white hover:bg-orange-700"
               >
-                <CheckCircle size={20} /> Confirmar Pagamento
+                <CheckCircle size={20} /> {selectedItems.length > 0 && selectedItems.length < orderItems.length ? 'Pagar Selecionados' : 'Finalizar Pagamento'}
               </button>
             </div>
           </div>
