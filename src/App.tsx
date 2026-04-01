@@ -45,6 +45,7 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/waiter/login" element={<WaiterLogin />} />
       <Route path="/menu" element={<QRMenu />} />
+      <Route path="/waiter/*" element={<WaiterApp />} />
       
       <Route path="/" element={
         <ProtectedRoute>
@@ -65,7 +66,6 @@ function AppRoutes() {
         <Route path="finance" element={<ProtectedRoute allowedRoles={['manager', 'cashier']}><Finance /></ProtectedRoute>} />
         <Route path="settings" element={<ProtectedRoute allowedRoles={['manager']}><Settings /></ProtectedRoute>} />
         
-        <Route path="waiter/*" element={<WaiterApp />} />
         <Route path="kitchen" element={<ProtectedRoute allowedRoles={['kitchen', 'manager']}><KitchenDisplay /></ProtectedRoute>} />
         <Route path="bar" element={<ProtectedRoute allowedRoles={['bar', 'manager']}><BarDisplay /></ProtectedRoute>} />
         <Route path="cashier" element={<ProtectedRoute allowedRoles={['cashier', 'manager']}><Cashier /></ProtectedRoute>} />
