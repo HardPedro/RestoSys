@@ -110,8 +110,19 @@ export default function WaiterApp() {
   const sendOrder = async () => {
     if (cart.length === 0 || !currentTable || !userData) return;
     try {
+      // Pre-fetch recipes for composite products outside the transaction
+      const compositeItems = cart.filter(item => item.product.isComposite);
+      const recipesMap = new Map();
+      for (const item of compositeItems) {
+        const recipesQuery = query(collection(db, 'recipes'), where('productId', '==', item.product.id));
+        const recipesSnap = await getDocs(recipesQuery);
+        if (!recipesSnap.empty) {
+          recipesMap.set(item.product.id, recipesSnap.docs[0].data());
+        }
+      }
+
       await runTransaction(db, async (transaction) => {
-        // 1. Get fresh table data to prevent overlap
+        // --- READ PHASE ---
         const tableRef = doc(db, 'tables', currentTable.id);
         const tableSnap = await transaction.get(tableRef);
         if (!tableSnap.exists()) throw new Error("Mesa não encontrada");
@@ -119,10 +130,42 @@ export default function WaiterApp() {
         const tableData = tableSnap.data();
         let orderId = tableData.currentOrderId;
 
-        if (!orderId) {
+        let orderSnap = null;
+        if (orderId) {
+          const orderRef = doc(db, 'orders', orderId);
+          orderSnap = await transaction.get(orderRef);
+        }
+
+        // Read all products and ingredients needed for stock deduction
+        const productSnaps = new Map();
+        for (const item of cart) {
+          if (!item.product.isComposite) {
+            const productRef = doc(db, 'products', item.product.id);
+            if (!productSnaps.has(item.product.id)) {
+              productSnaps.set(item.product.id, await transaction.get(productRef));
+            }
+          } else {
+            const recipe = recipesMap.get(item.product.id);
+            if (recipe) {
+              for (const ingredient of recipe.ingredients) {
+                const ingRef = doc(db, 'products', ingredient.ingredientId);
+                if (!productSnaps.has(ingredient.ingredientId)) {
+                  productSnaps.set(ingredient.ingredientId, await transaction.get(ingRef));
+                }
+              }
+            }
+          }
+        }
+
+        // --- WRITE PHASE ---
+        let totalAddition = 0;
+        let finalOrderId = orderId;
+
+        if (!finalOrderId) {
           // Create new order
-          const orderRef = doc(collection(db, 'orders'));
-          transaction.set(orderRef, {
+          const newOrderRef = doc(collection(db, 'orders'));
+          finalOrderId = newOrderRef.id;
+          transaction.set(newOrderRef, {
             tableId: currentTable.id,
             waiterId: userData.uid || userData.id,
             waiterName: userData.name,
@@ -130,20 +173,18 @@ export default function WaiterApp() {
             total: 0,
             createdAt: new Date().toISOString()
           });
-          orderId = orderRef.id;
           
           transaction.update(tableRef, {
             status: 'occupied',
-            currentOrderId: orderId
+            currentOrderId: finalOrderId
           });
         }
 
-        let totalAddition = 0;
         for (const item of cart) {
-          // 2. Add Order Items
+          // Add Order Items
           const itemRef = doc(collection(db, 'orderItems'));
           transaction.set(itemRef, {
-            orderId,
+            orderId: finalOrderId,
             tableId: currentTable.id,
             tableNumber: currentTable.number,
             productId: item.product.id,
@@ -157,15 +198,13 @@ export default function WaiterApp() {
           });
           totalAddition += item.product.price * item.quantity;
 
-          // 3. Stock Deduction (Basic)
+          // Stock Deduction
           if (!item.product.isComposite) {
-            const productRef = doc(db, 'products', item.product.id);
-            const productSnap = await transaction.get(productRef);
-            if (productSnap.exists()) {
-              const currentStock = productSnap.data().stock || 0;
-              transaction.update(productRef, { stock: currentStock - item.quantity });
+            const pSnap = productSnaps.get(item.product.id);
+            if (pSnap && pSnap.exists()) {
+              const currentStock = pSnap.data().stock || 0;
+              transaction.update(pSnap.ref, { stock: currentStock - item.quantity });
               
-              // Log Stock Movement
               const movementRef = doc(collection(db, 'stockMovements'));
               transaction.set(movementRef, {
                 productId: item.product.id,
@@ -174,24 +213,19 @@ export default function WaiterApp() {
                 quantity: item.quantity,
                 reason: 'sale',
                 date: new Date().toISOString(),
-                orderId: orderId
+                orderId: finalOrderId
               });
             }
           } else {
-            // Handle composite products: fetch recipe and deduct ingredients
-            const recipesQuery = query(collection(db, 'recipes'), where('productId', '==', item.product.id));
-            const recipesSnap = await getDocs(recipesQuery);
-            if (!recipesSnap.empty) {
-              const recipe = recipesSnap.docs[0].data();
+            const recipe = recipesMap.get(item.product.id);
+            if (recipe) {
               for (const ingredient of recipe.ingredients) {
-                const ingRef = doc(db, 'products', ingredient.ingredientId);
-                const ingSnap = await transaction.get(ingRef);
-                if (ingSnap.exists()) {
+                const ingSnap = productSnaps.get(ingredient.ingredientId);
+                if (ingSnap && ingSnap.exists()) {
                   const currentIngStock = ingSnap.data().stock || 0;
                   const deduction = ingredient.quantity * item.quantity;
-                  transaction.update(ingRef, { stock: currentIngStock - deduction });
+                  transaction.update(ingSnap.ref, { stock: currentIngStock - deduction });
 
-                  // Log Stock Movement for ingredient
                   const movementRef = doc(collection(db, 'stockMovements'));
                   transaction.set(movementRef, {
                     productId: ingredient.ingredientId,
@@ -200,7 +234,7 @@ export default function WaiterApp() {
                     quantity: deduction,
                     reason: 'sale',
                     date: new Date().toISOString(),
-                    orderId: orderId,
+                    orderId: finalOrderId,
                     parentProductId: item.product.id
                   });
                 }
@@ -209,12 +243,14 @@ export default function WaiterApp() {
           }
         }
 
-        // 4. Update Order Total
-        const orderRef = doc(db, 'orders', orderId);
-        const orderSnap = await transaction.get(orderRef);
-        if (orderSnap.exists()) {
+        // Update Order Total
+        if (orderId && orderSnap && orderSnap.exists()) {
           const currentTotal = orderSnap.data().total || 0;
-          transaction.update(orderRef, { total: currentTotal + totalAddition });
+          transaction.update(orderSnap.ref, { total: currentTotal + totalAddition });
+        } else if (!orderId) {
+          // We just created it, we can update the total since we have the ref
+          const newOrderRef = doc(db, 'orders', finalOrderId);
+          transaction.update(newOrderRef, { total: totalAddition });
         }
       });
 
