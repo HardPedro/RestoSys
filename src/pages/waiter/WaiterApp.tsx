@@ -119,6 +119,8 @@ export default function WaiterApp() {
       toast.error('Mesa em fechamento. Não é possível lançar pedidos.');
       return;
     }
+
+    let finalOrderId = currentOrderId;
     try {
       // Pre-fetch recipes for composite products outside the transaction
       const compositeItems = cart.filter(item => item.product.isComposite);
@@ -144,6 +146,7 @@ export default function WaiterApp() {
         }
 
         let orderId = tableData.currentOrderId;
+        finalOrderId = orderId;
 
         let orderSnap = null;
         if (orderId) {
@@ -174,9 +177,8 @@ export default function WaiterApp() {
 
         // --- WRITE PHASE ---
         let totalAddition = 0;
-        let finalOrderId = orderId;
 
-        if (!finalOrderId) {
+        if (!orderId) {
           // Create new order
           const newOrderRef = doc(collection(db, 'orders'));
           finalOrderId = newOrderRef.id;
@@ -265,13 +267,13 @@ export default function WaiterApp() {
           transaction.update(orderSnap.ref, { total: currentTotal + totalAddition });
         } else if (!orderId) {
           // We just created it, we can update the total since we have the ref
-          const newOrderRef = doc(db, 'orders', finalOrderId);
+          const newOrderRef = doc(db, 'orders', finalOrderId!);
           transaction.update(newOrderRef, { total: totalAddition });
         }
       });
 
       const printReq = {
-        pedidoId: currentOrderId.slice(0, 8),
+        pedidoId: finalOrderId?.slice(0, 8) || 'NOVO',
         itens: cart.map(i => ({
           nome: i.product.name,
           setor: i.product.category,
@@ -284,7 +286,7 @@ export default function WaiterApp() {
         total: 0,
         mesa: currentTable.number === 0 ? 'BAR' : currentTable.number.toString()
       };
-      
+
       // Send to printJobs collection so the PC can pick it up and print locally
       await addDoc(collection(db, 'printJobs'), {
         ...printReq,

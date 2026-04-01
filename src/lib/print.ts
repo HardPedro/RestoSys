@@ -15,15 +15,21 @@ export interface PrintRequest {
 }
 
 export const printOrderWithFallback = async (request: PrintRequest, htmlContent: string) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+
   try {
     const res = await fetch(`http://localhost:17321/print`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     if (res.ok) return;
   } catch (e) {
-    // Agent offline or error, fallback to browser print
+    clearTimeout(timeoutId);
+    console.warn('Print agent offline or timeout, falling back to browser print', e);
   }
   printReceipt(htmlContent);
 };

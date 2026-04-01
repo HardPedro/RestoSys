@@ -34,8 +34,8 @@ export default function Settings() {
     checkAgentStatus();
     const interval = setInterval(checkAgentStatus, 5000);
 
-    // Listen for pending print jobs
-    const q = query(collection(db, 'printJobs'), where('status', '==', 'pending'));
+    // Listen for pending and failed print jobs
+    const q = query(collection(db, 'printJobs'), where('status', 'in', ['pending', 'failed']));
     const unsubJobs = onSnapshot(q, (snapshot) => {
       setPendingJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
@@ -481,8 +481,17 @@ export default function Settings() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-orange-500"></span>
-                    <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Aguardando Agente</span>
+                    {job.status === 'pending' ? (
+                      <>
+                        <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-orange-500"></span>
+                        <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Aguardando Agente</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle size={14} className="text-red-500" />
+                        <span className="text-xs font-bold text-red-600 uppercase tracking-wider">Erro na Impressão</span>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
