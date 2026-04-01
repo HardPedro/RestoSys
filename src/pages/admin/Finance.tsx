@@ -60,7 +60,6 @@ export default function Finance() {
   }, 0);
 
   return (
-  return (
     <div className="p-4 md:p-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Financeiro</h1>

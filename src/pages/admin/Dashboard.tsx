@@ -128,7 +128,7 @@ export default function Dashboard() {
     credit: 'bg-blue-500', debit: 'bg-indigo-500', pix: 'bg-teal-500', cash: 'bg-green-500'
   };
 
-  const totalPayments = Object.values(paymentMethods).reduce((a, b) => a + b, 0);
+  const totalPayments = (Object.values(paymentMethods) as number[]).reduce((a, b) => a + b, 0);
 
   return (
     <div className="p-4 md:p-8">
@@ -184,7 +184,7 @@ export default function Dashboard() {
             <h2 className="text-lg font-bold text-zinc-900">Formas de Pagamento</h2>
           </div>
           <div className="space-y-5">
-            {totalPayments > 0 ? Object.entries(paymentMethods).map(([method, amount]) => {
+            {totalPayments > 0 ? (Object.entries(paymentMethods) as [string, number][]).map(([method, amount]) => {
               if (amount === 0) return null;
               const percentage = ((amount / totalPayments) * 100).toFixed(1);
               return (
